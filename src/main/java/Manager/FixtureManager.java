@@ -15,6 +15,7 @@ public class FixtureManager implements Serializable {
 
     public void startFixtureGeneration(Long maxRounds, List<Team> teams){
 
+
         List<FixtureTeamRoundDto> fixtureTeamRoundDtos = new ArrayList<>();
         List<String> playedRounds = new ArrayList<>();
         Long roundsToGenerate;
