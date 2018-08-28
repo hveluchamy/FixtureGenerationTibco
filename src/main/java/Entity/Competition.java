@@ -2,10 +2,11 @@ package Entity;
 
 import Enums.CompetitionStatus;
 
+import java.io.Serializable;
 import java.sql.Date;
 import java.sql.Timestamp;
 
-public class Competition {
+public class Competition implements Serializable {
     private Long Id;
     private String name;
     private CompetitionStatus competitionStatus;

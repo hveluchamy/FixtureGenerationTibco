@@ -5,7 +5,6 @@ import java.io.Serializable;
 
 public class Fixture implements Serializable {
 
-    //TODO change status to enum
     private String status;
 
     private long id;

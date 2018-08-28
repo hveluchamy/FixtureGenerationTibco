@@ -1,6 +1,8 @@
 package Entity;
 
-public class Round {
+import java.io.Serializable;
+
+public class Round implements Serializable {
     private String name;
     private double orderNumber;
     private String isArchived;

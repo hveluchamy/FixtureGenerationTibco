@@ -2,11 +2,12 @@ package JDBC;
 
 import org.apache.log4j.Logger;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class JDBCQueryProcessing {
+public class JDBCQueryProcessing implements Serializable {
     static Logger LOG = Logger.getLogger(JDBCQueryProcessing.class);
 
     public static void jdbcExecuteUpdate(String compId, String updateTableSQL) throws SQLException {

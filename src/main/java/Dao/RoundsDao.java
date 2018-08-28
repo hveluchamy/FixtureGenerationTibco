@@ -4,12 +4,13 @@ import Entity.Round;
 import JDBC.JDBCConnection;
 import org.apache.log4j.Logger;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class RoundsDao {
+public class RoundsDao implements Serializable {
     Logger LOG = Logger.getLogger(RoundsDao.class);
 
   /*  public String getRoundNameFromId(String roundId) throws SQLException {

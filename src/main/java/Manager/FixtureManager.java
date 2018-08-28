@@ -2,6 +2,7 @@ package Manager;
 
 import Dao.FixtureDao;
 import Dto.FixtureTeamRoundDto;
+import Dto.TibcoFixtureGenerationInputDto;
 import Entity.*;
 import org.apache.log4j.Logger;
 
@@ -13,39 +14,41 @@ import java.util.stream.Collectors;
 public class FixtureManager implements Serializable {
     Logger LOG = Logger.getLogger(FixtureManager.class);
 
-    public void startFixtureGeneration(Long maxRounds, List<Team> teams){
+    public void startFixtureGeneration( TibcoFixtureGenerationInputDto tibcoFixtureGenerationInputDto) throws Exception {
 
-
-        List<FixtureTeamRoundDto> fixtureTeamRoundDtos = new ArrayList<>();
-        List<String> playedRounds = new ArrayList<>();
-        Long roundsToGenerate;
+        List<Team> teams =tibcoFixtureGenerationInputDto.getTeams();
+        List<FixtureTeamRoundDto> fixtureTeamRoundDtos;
+        List<String> playedRounds;
+        Integer roundsToGenerate;
         try {
-            //TODO pass compid
-            fixtureTeamRoundDtos = getPlayedFixturesAndRounds();
+            fixtureTeamRoundDtos = getPlayedFixturesAndRounds(tibcoFixtureGenerationInputDto.getCompetition().getSfId());
             Set<String> rounds =  fixtureTeamRoundDtos.stream().map(f->{
                 String round;
                 round = f.getRoundId();
                 return round;
             }).collect(Collectors.toSet());
             playedRounds = (List<String>) rounds;
-            roundsToGenerate = maxRounds - playedRounds.size();
-            //TODO get bye team if odd number of teams
+            roundsToGenerate = tibcoFixtureGenerationInputDto.getMaxRounds() - playedRounds.size();
+            assignByeTeam(teams);
             if(roundsToGenerate>0){
                 List<FixtureStatistics> fixtureStatisticsList = getInitFixtureStatistics(teams);
                 List<Round> roundList = addExistingFixtures(fixtureTeamRoundDtos, fixtureStatisticsList, playedRounds, teams);
-
                 generateUnplayedRounds(roundsToGenerate, roundList,teams, fixtureStatisticsList);
-
                 List<Round> newRounds = roundList.stream().filter(r->r.getNew().equals(true)).collect(Collectors.toList());
 
-
-
-                /* local.rounds = FixtureGenerationEngine.addExistingFixtures(local.playedFixtures, local.fixtureStatistics);
-                    //add unplayed rounds
-                    local.rounds = FixtureGenerationEngine.generateUnplayedRounds(local.roundsToGenerate, local.rounds, local.teams, local.fixtureStatistics);*/
             }
         } catch (SQLException e) {
            LOG.error("Error getting played fixtures", e);
+        }
+    }
+
+    private void assignByeTeam(List<Team> teams){
+        if(teams.size()!=0 && teams.size() % 2 != 0){
+            Team team = new Team();
+            team.setSfid("Bye");
+            team.setName("Bye");
+            teams.add(team);
+
         }
     }
 
@@ -69,13 +72,10 @@ public class FixtureManager implements Serializable {
     }
 
     //get played fixtures
-    //TODO pass compid
-    private List<FixtureTeamRoundDto> getPlayedFixturesAndRounds() throws SQLException {
+    private List<FixtureTeamRoundDto> getPlayedFixturesAndRounds(String competitionId) throws SQLException {
         List<FixtureTeamRoundDto> fixtureTeamRoundDtoList = new ArrayList<>();
         FixtureDao fixtureDao = new FixtureDao();
-        //TODO - send proper comp id ofcourse
-        fixtureTeamRoundDtoList =  fixtureDao.getPlayedFixtures("a0A2800000Ri0adEAB");
-
+        fixtureTeamRoundDtoList =  fixtureDao.getPlayedFixtures(competitionId);
         return fixtureTeamRoundDtoList;
     }
 
@@ -107,7 +107,7 @@ public class FixtureManager implements Serializable {
 
 
     private List<FixtureStatistics> addGameToFixture(FixtureTeamRoundDto fixtureTeamRoundDto, List<FixtureStatistics> fixtureStatistics, Round round){
-        //TODO - add bye team if teamid is null
+        //TODO - add bye team if teamid is null - check after debugging
         String homeTeamId = fixtureTeamRoundDto.getFixture().getHomeTeamId();
         String awayTeamId = fixtureTeamRoundDto.getFixture().getAwayTeamId();
         return calculateStatistics(fixtureStatistics, round, awayTeamId, homeTeamId);
@@ -184,22 +184,17 @@ public class FixtureManager implements Serializable {
         return increamentValue+1;
     }
 
-    private List<Round> generateUnplayedRounds(Long roundsToGenerate, List<Round> rounds, List<Team> teams, List<FixtureStatistics> fixtureStatistics){
+    private List<Round> generateUnplayedRounds(Integer roundsToGenerate, List<Round> rounds, List<Team> teams, List<FixtureStatistics> fixtureStatistics) throws Exception {
         for(int i =0; i<roundsToGenerate; i++){
             int currentRound = rounds.size();
 
-            //TODO - need to bubble this up
-            try {
-               Match match = generateRound(teams, fixtureStatistics, currentRound);
-               Round round = new Round();
-               round.setOrderNumber(currentRound);
-               round.setName("Round " + currentRound);
-               round.setNew(true);
-               round.setMatch(match);
-               rounds.add(round);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            Match match = generateRound(teams, fixtureStatistics, currentRound);
+            Round round = new Round();
+            round.setOrderNumber(currentRound);
+            round.setName("Round " + currentRound);
+            round.setNew(true);
+            round.setMatch(match);
+            rounds.add(round);
 
         }
 
@@ -232,7 +227,7 @@ public class FixtureManager implements Serializable {
 
             Map<String, AvailableOpponent> availableOpponentMapSorted;
             availableOpponentMapSorted = finalAvailableOpponentSorted;
-            //TODO - need to verify
+            //TODO - need to verify during debugging
             AvailableOpponent currentTeam = availableOpponentListForSort.get(0);
 
             if (currentTeam.getGoodOptionsCount()>0){

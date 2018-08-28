@@ -3,11 +3,12 @@ package Dao;
 import JDBC.JDBCConnection;
 import org.apache.log4j.Logger;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class LocationDao {
+public class LocationDao implements Serializable {
     Logger LOG = Logger.getLogger(LocationDao.class);
     public void deleteLocationTimeSlots(String compId) throws SQLException {
         String updateTableSQL = "DELETE FROM heroku.locationtimeslot \n" +

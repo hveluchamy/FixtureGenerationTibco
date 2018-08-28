@@ -1,6 +1,8 @@
 package Entity;
 
-public class Team {
+import java.io.Serializable;
+
+public class Team implements Serializable {
     private java.sql.Timestamp createdDate;
     private double externalidC;
     private long id;
