@@ -27,7 +27,6 @@ public class RankedOpponentComparator implements Comparator<AvailableOpponent> {
             return Integer.valueOf(o1.getOptionCount().compareTo(o2.getOptionCount()));
         }
 
-        //TODO - verify why its b-a instead of a-b like the rest
         if(o1.getGoodOptionsCount() != null && o2.getGoodOptionsCount() != null){
             return Integer.valueOf(o2.getBadOptionsCount().compareTo(o1.getBadOptionsCount()));
         }
@@ -45,7 +44,7 @@ public class RankedOpponentComparator implements Comparator<AvailableOpponent> {
             return  Integer.valueOf(o1.getOpponents().get(o1.getTeamSfId()).getFixtureResultStatistics().getMatchesPlayed()
                     .compareTo(o2.getOpponents().get(o2.getTeamSfId()).getFixtureResultStatistics().getMatchesPlayed()));
         }
-        //TODO - verify why its b-a instead of a-b like the rest
+
         if(o2.getOpponents().get(o2.getTeamSfId()).getFixtureResultStatistics().getHomeAwayDiff() !=null
                 && o1.getOpponents().get(o1.getTeamSfId()).getFixtureResultStatistics().getHomeAwayDiff()!=null){
             return Integer.valueOf(o2.getOpponents().get(o2.getTeamSfId()).getFixtureResultStatistics().getHomeAwayDiff()

@@ -1,14 +1,12 @@
-import Entity.AvailableOpponent;
-import Entity.FixtureResultStatistics;
-import Entity.FixtureStatisticsOpponent;
-import JDBC.JDBCConnection;
+import Dto.TibcoFixtureGenerationDto;
+import Entity.*;
+import Manager.FixtureManager;
 import Manager.OpponentComparator;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TibcoFirstIntegrationPoint implements Serializable {
 
@@ -22,6 +20,106 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         ThirdClassWithParam tc = new ThirdClassWithParam();
               System.out.print(tc.returnParamTest("value from main"));
         LOG.info("Imported log4j from maven");*/
+       // testComparatorSort();
+
+
+
+               /*
+
+                 Map<String, AvailableOpponent> sortedMap = new LinkedHashMap<>();
+               availableOpponentListForSort.stream().collect(
+                Collectors.toMap(AvailableOpponent::getTeamSfId, item->item)
+        );*/
+        //System.out.println("map print");
+        //availableOpponentListForSort.forEach(a-> sortedMap.put(a.getTeamSfId(), a));
+        //sortedMap.values().stream().forEach(a-> System.out.println(a.getTeamSfId()));
+
+
+        TibcoFixtureGenerationDto tbdto = setupTibcoFixtureGenerationDto();
+
+        FixtureManager fm = new FixtureManager();
+        try {
+            fm.startFixtureGeneration(tbdto);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+        // JDBCConnection sc = new JDBCConnection();
+      //  sc.TestPrintBlogs();
+        //TestPrintBlogs();
+    }
+
+    private static TibcoFixtureGenerationDto setupTibcoFixtureGenerationDto() {
+        Competition competition = new Competition();
+        competition.setSfId("a0A0k000007zmDTEAY");
+
+        List<Team> teams = new ArrayList<>();
+
+        Team t01 = new Team();
+        t01.setSfid("a0R28000006t3eNEAQ");
+        t01.setName("Aussie Cheetahs");
+
+        teams.add(0, t01);
+
+        Team t02 = new Team();
+        t02.setSfid("a0R28000006t3d1EAA");
+        t02.setName("Aussie Bobcats");
+        teams.add(1, t02);
+
+        Team t03 = new Team();
+        t03.setSfid("a0R0k000000yEM8EAM");
+        t03.setName("U17 Diamond Mine");
+        teams.add(2, t03);
+
+        Team t04 = new Team();
+        t04.setSfid("a0R0k000000yEMIEA2");
+        t04.setName("U17 AB team-Vikings");
+        teams.add(3, t04);
+
+        Team t05 = new Team();
+        t05.setSfid("a0R0k000000vzADEAY");
+        t05.setName("TN91");
+        teams.add(4, t05);
+
+        Team t06 = new Team();
+        t06.setSfid("a0R0k000000vycGEAQ");
+        t06.setName("team123");
+        teams.add(5, t06);
+
+        Team t07 = new Team();
+        t07.setSfid("a0R0k00000149aQEAQ");
+        t07.setName("TB 2");
+        teams.add(6, t07);
+
+        Team t08 = new Team();
+        t08.setSfid("a0R0k00000149aLEAQ");
+        t08.setName("Team Bendigo");
+        teams.add(7, t08);
+
+        Team t09 = new Team();
+        t09.setSfid("a0R0k000000vzHAEAY");
+        t09.setName("Testing 990");
+        teams.add(8, t09);
+
+        Team t10 = new Team();
+        t10.setSfid("a0R0k000000zoYtEAI");
+        t10.setName("Team3");
+        teams.add(9, t10);
+
+        Team t11 = new Team();
+        t11.setSfid("a0R280000092JS4EAM");
+        t11.setName("U17 Cashmore-Vikings");
+        teams.add(10, t11);
+
+        TibcoFixtureGenerationDto tbdto = new TibcoFixtureGenerationDto();
+        tbdto.setCompetition(competition);
+        tbdto.setMaxRounds(12);
+        tbdto.setTeams(teams);
+        return tbdto;
+    }
+
+    private static void testComparatorSort() {
         AvailableOpponent availableOpponent = new AvailableOpponent();
 
         FixtureStatisticsOpponent unPlayedOpponent;
@@ -45,8 +143,7 @@ public class TibcoFirstIntegrationPoint implements Serializable {
 
         availableOpponent.getUnplayedOptions().put("testOpponent", unPlayedOpponent);
 
-       // System.out.println(availableOpponent.getUnplayedOptions().get("testOpponent").getFixtureResultStatistics().getMatchesPlayed());
-
+        // System.out.println(availableOpponent.getUnplayedOptions().get("testOpponent").getFixtureResultStatistics().getMatchesPlayed());
 
 
         availableOpponent.setOptionCount(5);
@@ -120,31 +217,7 @@ public class TibcoFirstIntegrationPoint implements Serializable {
 
         //availableOpponentListForSort.stream().map(a -> a.getTeamSfId()); 	items.forEach(item->System.out.println(item));
         availableOpponentListForSort.forEach(a-> System.out.println(a.getTeamSfId()));
-
-        Map<String, AvailableOpponent> sortedMap = new LinkedHashMap<>();
-
-               /* availableOpponentListForSort.stream().collect(
-                Collectors.toMap(AvailableOpponent::getTeamSfId, item->item)
-        );*/
-        System.out.println("map print");
-        availableOpponentListForSort.forEach(a-> sortedMap.put(a.getTeamSfId(), a));
-        sortedMap.values().stream().forEach(a-> System.out.println(a.getTeamSfId()));
-
-
-
-
-
-
-
-
-
-
-       // JDBCConnection sc = new JDBCConnection();
-      //  sc.TestPrintBlogs();
-        //TestPrintBlogs();
     }
-
-
 
 
 }

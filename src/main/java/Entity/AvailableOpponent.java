@@ -1,6 +1,7 @@
 package Entity;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,10 @@ public class AvailableOpponent implements Serializable {
     private Long teamHomeRatio;
 
     public AvailableOpponent(){
+        this.opponents = new HashMap<>();
+        this.unplayedOptions = new HashMap<>();
+        this.goodOptions = new HashMap<>();
+        this.badOptions = new HashMap<>();
     }
 
     public String getTeamSfId() {

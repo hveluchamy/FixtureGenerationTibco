@@ -7,7 +7,7 @@ import Entity.Team;
 import java.io.Serializable;
 import java.util.List;
 
-public class TibcoFixtureGenerationInputDto implements Serializable {
+public class TibcoFixtureGenerationDto implements Serializable {
     public Competition competition;
     public List<Team> teams;
     public List<Location> locations;

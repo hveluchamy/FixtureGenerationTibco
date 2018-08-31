@@ -1,6 +1,7 @@
 package Entity;
 
 import java.io.Serializable;
+import java.util.List;
 
 public class Round implements Serializable {
     private String name;
@@ -17,8 +18,15 @@ public class Round implements Serializable {
     private String isDeleted;
     //Transient boolean value
     private Boolean isNew;
-    private Match match;
+    private List<Match> match;
 
+    public List<Match> getMatch() {
+        return match;
+    }
+
+    public void setMatches(List<Match> match) {
+        this.match = match;
+    }
 
     public String getName() {
         return name;
@@ -133,13 +141,5 @@ public class Round implements Serializable {
 
     public void setNew(Boolean aNew) {
         isNew = aNew;
-    }
-
-    public Match getMatch() {
-        return match;
-    }
-
-    public void setMatch(Match match) {
-        this.match = match;
     }
 }

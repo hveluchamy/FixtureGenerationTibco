@@ -1,6 +1,8 @@
 package Entity;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FixtureStatistics {
     private Long id;
@@ -20,7 +22,7 @@ public class FixtureStatistics {
 
     private String teamSfId;
     private FixtureResultStatistics fixtureResultStatistics;
-    private FixtureStatisticsOpponent fixtureStatisticsOpponent;
+    private Map<String, FixtureStatisticsOpponent>  fixtureStatisticsOpponentMap;
 
 
 
@@ -30,11 +32,12 @@ public class FixtureStatistics {
     public FixtureStatistics(String teamSfId, FixtureResultStatistics fixtureResultStatistics) {
         this.teamSfId = teamSfId;
         this.fixtureResultStatistics = fixtureResultStatistics;
+        this.fixtureStatisticsOpponentMap = new HashMap<>();
     }
 
     public FixtureStatistics(String teamSfId, FixtureStatisticsOpponent fixtureStatisticsOpponent){
         this.teamSfId = teamSfId;
-        this.fixtureStatisticsOpponent = fixtureStatisticsOpponent;
+        this.fixtureStatisticsOpponentMap.put(fixtureStatisticsOpponent.getOpponentSfId(), fixtureStatisticsOpponent);
     }
 
 
@@ -145,54 +148,6 @@ public class FixtureStatistics {
         this.updateddatetime = updateddatetime;
     }
 
-   /* public long getMatchesPlayed() {
-        return matchesPlayed;
-    }
-
-    public void setMatchesPlayed(long matchesPlayed) {
-        this.matchesPlayed = matchesPlayed;
-    }
-
-    public long getHomeGames() {
-        return homeGames;
-    }
-
-    public void setHomeGames(long homeGames) {
-        this.homeGames = homeGames;
-    }
-
-    public long getLastAway() {
-        return lastAway;
-    }
-
-    public void setLastAway(long lastAway) {
-        this.lastAway = lastAway;
-    }
-
-    public long getHomeDistribution() {
-        return homeDistribution;
-    }
-
-    public void setHomeDistribution(Long homeDistribution) {
-        this.homeDistribution = homeDistribution;
-    }
-
-    public long getAwayDistribution() {
-        return awayDistribution;
-    }
-
-    public void setAwayDistribution(Long awayDistribution) {
-        this.awayDistribution = awayDistribution;
-    }
-
-    public long getHomeRatio() {
-        return homeRatio;
-    }
-
-    public void setHomeRatio(Long homeRatio) {
-        this.homeRatio = homeRatio;
-    }
-*/
     public String getTeamSfId() {
         return teamSfId;
     }
@@ -201,12 +156,17 @@ public class FixtureStatistics {
         this.teamSfId = teamSfId;
     }
 
-    public FixtureStatisticsOpponent getFixtureStatisticsOpponent() {
-        return fixtureStatisticsOpponent;
+    public FixtureStatisticsOpponent getFixtureStatisticsOpponent(String opponentSfId) {
+        try {
+            return this.fixtureStatisticsOpponentMap.get(opponentSfId);
+        } catch (NullPointerException e){
+            return null;
+        }
+
     }
 
-    public void setFixtureStatisticsOpponent(FixtureStatisticsOpponent fixtureStatisticsOpponent) {
-        this.fixtureStatisticsOpponent = fixtureStatisticsOpponent;
+    public void addFixtureStatisticsOpponent(FixtureStatisticsOpponent fixtureStatisticsOpponent) {
+        this.fixtureStatisticsOpponentMap.put(fixtureStatisticsOpponent.getOpponentSfId(), fixtureStatisticsOpponent);
     }
 
     public FixtureResultStatistics getFixtureResultStatistics() {

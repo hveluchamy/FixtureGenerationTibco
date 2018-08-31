@@ -2,8 +2,10 @@ package Manager;
 
 import Dao.FixtureDao;
 import Dto.FixtureTeamRoundDto;
-import Dto.TibcoFixtureGenerationInputDto;
+import Dto.RoundDto;
+import Dto.TibcoFixtureGenerationDto;
 import Entity.*;
+import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
@@ -14,27 +16,52 @@ import java.util.stream.Collectors;
 public class FixtureManager implements Serializable {
     Logger LOG = Logger.getLogger(FixtureManager.class);
 
-    public void startFixtureGeneration( TibcoFixtureGenerationInputDto tibcoFixtureGenerationInputDto) throws Exception {
+    public void startFixtureGeneration( TibcoFixtureGenerationDto tibcoFixtureGenerationDto) throws Exception {
 
-        List<Team> teams =tibcoFixtureGenerationInputDto.getTeams();
+        List<Team> teams = tibcoFixtureGenerationDto.getTeams();
         List<FixtureTeamRoundDto> fixtureTeamRoundDtos;
         List<String> playedRounds;
         Integer roundsToGenerate;
+        String competitionId = tibcoFixtureGenerationDto.getCompetition().getSfId();
+
+        LocationManager locationManager = new LocationManager();
+        RoundsManager roundsManager = new RoundsManager();
+        //TODO delete lcoationtimeslot and delete unplayed rounds - lines commented below for test purpose
+       // locationManager.deleteLocationTimeSlots(competitionId);
+        //roundsManager.deleteUnplayedRounds(competitionId);
+
         try {
-            fixtureTeamRoundDtos = getPlayedFixturesAndRounds(tibcoFixtureGenerationInputDto.getCompetition().getSfId());
+
+            fixtureTeamRoundDtos = getPlayedFixturesAndRounds(competitionId);
             Set<String> rounds =  fixtureTeamRoundDtos.stream().map(f->{
                 String round;
                 round = f.getRoundId();
                 return round;
             }).collect(Collectors.toSet());
-            playedRounds = (List<String>) rounds;
-            roundsToGenerate = tibcoFixtureGenerationInputDto.getMaxRounds() - playedRounds.size();
+            //playedRounds = (List<String>) rounds;
+            playedRounds = rounds.stream().collect(Collectors.toList());
+            roundsToGenerate = tibcoFixtureGenerationDto.getMaxRounds() - playedRounds.size();
             assignByeTeam(teams);
             if(roundsToGenerate>0){
                 List<FixtureStatistics> fixtureStatisticsList = getInitFixtureStatistics(teams);
                 List<Round> roundList = addExistingFixtures(fixtureTeamRoundDtos, fixtureStatisticsList, playedRounds, teams);
                 generateUnplayedRounds(roundsToGenerate, roundList,teams, fixtureStatisticsList);
                 List<Round> newRounds = roundList.stream().filter(r->r.getNew().equals(true)).collect(Collectors.toList());
+                List<RoundDto> newRoundDto = newRounds.stream().map(round ->
+                                                                    {
+                                                                        RoundDto dto = new RoundDto();
+                                                                        dto.setName(round.getName());
+                                                                        dto.setOrderNumber(round.getOrderNumber());
+                                                                        Map<String, String> homeAndAwayTeam = new HashMap<>();
+                                                                        for (Match matc: round.getMatch()
+                                                                             ) {
+                                                                            homeAndAwayTeam.put(matc.getHomeTeam().getTeamSfId(), matc.getAwayTeam().getTeamSfId());
+                                                                        }
+                                                                        dto.setHomeAndAwayTeam(homeAndAwayTeam);
+                                                                        return dto;
+                                                                    }).collect(Collectors.toList());
+                String jsonStr = new Gson().toJson(newRoundDto);
+                System.out.println("Finished genearting rounds " + jsonStr );
 
             }
         } catch (SQLException e) {
@@ -47,7 +74,7 @@ public class FixtureManager implements Serializable {
             Team team = new Team();
             team.setSfid("Bye");
             team.setName("Bye");
-            teams.add(team);
+            teams.add(0, team);
 
         }
     }
@@ -67,7 +94,7 @@ public class FixtureManager implements Serializable {
         FixtureStatisticsOpponent fixtureStatisticsOpponent = new FixtureStatisticsOpponent();
         fixtureStatisticsOpponent.setOpponentSfId(opponentTeamSfid);
         fixtureStatisticsOpponent.setFixtureResultStatistics(fixtureResultStatistics);
-        fixtureStatistics.setFixtureStatisticsOpponent(fixtureStatisticsOpponent);
+        fixtureStatistics.addFixtureStatisticsOpponent(fixtureStatisticsOpponent);
         return fixtureStatistics;
     }
 
@@ -119,12 +146,16 @@ public class FixtureManager implements Serializable {
         return fixtureStatisticsList;
     }
 
-    private List<FixtureStatistics> calculateTeamStatistics(List<FixtureStatistics> fixtureStatisticsList, Round round, String teamSfid, String opponentTeamSfid, String homeTeamSfid){
+   private List<FixtureStatistics> calculateTeamStatistics(List<FixtureStatistics> fixtureStatisticsList, Round round, String teamSfid, String opponentTeamSfid, String homeTeamSfid){
         Map<String, FixtureStatistics> fixtureStatisticsMap =  fixtureStatisticsList.stream().collect(
                 Collectors.toMap(FixtureStatistics::getTeamSfId, item ->item));
 
         //TODO verify if this below is required as its been created already above and has team sfid
-        //FixtureStatistics fixtureStatisticsTeam = getInitFixtureStatisticsPerTeam(team);
+        if(fixtureStatisticsMap.get(teamSfid)==null){
+            FixtureStatistics fixtureStatisticsTeam = getInitFixtureStatisticsPerTeam(teamSfid);
+            fixtureStatisticsMap.put(teamSfid, fixtureStatisticsTeam);
+        }
+
 
         FixtureStatistics f = fixtureStatisticsMap.get(teamSfid);
 
@@ -132,11 +163,13 @@ public class FixtureManager implements Serializable {
         FixtureResultStatistics fr = f.getFixtureResultStatistics();
         fr.setMatchesPlayed(increamentPropertyValueByOne(fr.getMatchesPlayed()));
         f.setFixtureResultStatistics(fr);
+
         //create team opponent team if not defined
+        if(f.getFixtureStatisticsOpponent(opponentTeamSfid) == null)
         f = getInitFixtureStatisticsOpponent(opponentTeamSfid, f);
 
         //add this fixture to opponents matches_played
-        FixtureStatisticsOpponent fo = f.getFixtureStatisticsOpponent();
+        FixtureStatisticsOpponent fo = f.getFixtureStatisticsOpponent(opponentTeamSfid);
         FixtureResultStatistics frsOpponent = fo.getFixtureResultStatistics();
         frsOpponent.setMatchesPlayed(increamentPropertyValueByOne(frsOpponent.getMatchesPlayed()));
 
@@ -145,11 +178,39 @@ public class FixtureManager implements Serializable {
         if(frsOpponent.getLastPlayed()>0){
             frsOpponent.setDistribution((long) (round.getOrderNumber() - frsOpponent.getLastPlayed()));
         }
-        //update last played opponent
+        //update last played opponent - This is used to calculate when they can play again after a minimum gap
         frsOpponent.setLastPlayed((long) round.getOrderNumber());
         Long currentStreak;
         //home game stats
-        if(teamSfid.equals(homeTeamSfid)){
+
+       if(teamSfid.equals(homeTeamSfid)){
+
+           //frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
+           fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
+           //frsOpponent.setLastHome(1L);
+           frsOpponent.setLastAway(1L);
+           fr.setLastHome(increamentPropertyValueByOne(fr.getLastHome()));
+           fr.setLastAway(0L);
+           currentStreak = fr.getLastHome();
+           if(fr.getLastHome()>1){
+               //remove streak
+               fr.setHomeDistribution(currentStreak-1);
+           }
+           fr.setHomeDistribution(increamentPropertyValueByOne(currentStreak));
+       } else {
+           frsOpponent.setLastAway(0L);
+           frsOpponent.setLastHome(1L);
+           fr.setLastHome(0L);
+           fr.setLastAway(increamentPropertyValueByOne(fr.getLastAway()));
+           currentStreak = fr.getLastAway();
+           if(fr.getLastAway()>1){
+               fr.setAwayDistribution(currentStreak-1);
+           }
+           fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
+       }
+
+       //The one below is translated from nodejs. aboce is the modification
+       /* if(teamSfid.equals(homeTeamSfid)){
             //TODO - verify why to increament opponents home game
             frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
             fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
@@ -171,9 +232,13 @@ public class FixtureManager implements Serializable {
                 fr.setAwayDistribution(currentStreak-1);
             }
             fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
-        }
+        }*/
+
+        fo.setFixtureResultStatistics(frsOpponent);
+        f.addFixtureStatisticsOpponent(fo);
         //ratios
         fr.setHomeRatio(fr.getHomeGames()!=null ? fr.getHomeGames():0/fr.getMatchesPlayed());
+        f.setFixtureResultStatistics(fr);
 
         fixtureStatisticsMap.put(teamSfid, f);
         List<FixtureStatistics> fixtureStatisticsListUpdated = new ArrayList<>(fixtureStatisticsMap.values());
@@ -186,14 +251,16 @@ public class FixtureManager implements Serializable {
 
     private List<Round> generateUnplayedRounds(Integer roundsToGenerate, List<Round> rounds, List<Team> teams, List<FixtureStatistics> fixtureStatistics) throws Exception {
         for(int i =0; i<roundsToGenerate; i++){
-            int currentRound = rounds.size();
+            int currentRound = rounds.size()+1;
 
-            Match match = generateRound(teams, fixtureStatistics, currentRound);
             Round round = new Round();
             round.setOrderNumber(currentRound);
             round.setName("Round " + currentRound);
             round.setNew(true);
-            round.setMatch(match);
+
+            List<Match> matches = generateRoundMatches(teams, fixtureStatistics, currentRound, round);
+
+            round.setMatches(matches);
             rounds.add(round);
 
         }
@@ -201,7 +268,7 @@ public class FixtureManager implements Serializable {
         return rounds;
     }
 
-    private Match generateRound(List<Team> teams, List<FixtureStatistics> fixtureStatistics, int currentRound) throws Exception {
+    private List<Match> generateRoundMatches(List<Team> teams, List<FixtureStatistics> fixtureStatistics, int currentRound, Round round) throws Exception {
 
 
         Map<String, FixtureStatistics> fixtureStatisticsMap =  fixtureStatistics.stream().collect(
@@ -209,16 +276,15 @@ public class FixtureManager implements Serializable {
 
         Map<String, AvailableOpponent> availableOpponentMap = getAvailableOpponents(teams, fixtureStatisticsMap, currentRound);
 
-        List<AvailableOpponent> availableOpponentListForSort = (List<AvailableOpponent>) availableOpponentMap.values();
-        List<AvailableOpponent> availableOpponentListOriginal = availableOpponentListForSort;
+        List<AvailableOpponent> availableOpponentListForSort = availableOpponentMap.values().stream().collect(Collectors.toList());
+        //List<AvailableOpponent> availableOpponentListOriginal = availableOpponentListForSort;
 
-        //TODO - need to veirfy whcih list to use for looping(js uses the one where it removes avaopponent)
-        for (AvailableOpponent availableOpponent: availableOpponentListOriginal
-             ) {
+        List<Match> matchList = new ArrayList<>();
+
+        while (availableOpponentListForSort.size()>0)
+        {
 
             Map<String, FixtureStatisticsOpponent> bestOpponents;
-
-            Map<String, FixtureStatisticsOpponent> rankedOpponents;
 
             Collections.sort(availableOpponentListForSort, new OpponentComparator());
 
@@ -227,6 +293,7 @@ public class FixtureManager implements Serializable {
 
             Map<String, AvailableOpponent> availableOpponentMapSorted;
             availableOpponentMapSorted = finalAvailableOpponentSorted;
+
             //TODO - need to verify during debugging
             AvailableOpponent currentTeam = availableOpponentListForSort.get(0);
 
@@ -238,7 +305,7 @@ public class FixtureManager implements Serializable {
                 bestOpponents = currentTeam.getBadOptions();
             }
 
-            if(bestOpponents == null){
+            if(bestOpponents == null || bestOpponents.size()==0){
                 throw new Exception("No Oppopnents available. Please contact administrator");
             }
 
@@ -246,11 +313,13 @@ public class FixtureManager implements Serializable {
             for (String key: bestOpponents.keySet())
                 bestAvailableOpponentMap.put(key, availableOpponentMapSorted.get(key));
 
-            List<AvailableOpponent> rankedBestOpponentListForSort = (List<AvailableOpponent>) bestAvailableOpponentMap.values();
+            List<AvailableOpponent> rankedBestOpponentListForSort =  bestAvailableOpponentMap.values().stream().collect(Collectors.toList());
 
             availableOpponentMapSorted = deleteOpponentOption(availableOpponentMapSorted, teams, currentTeam);
 
             Collections.sort(rankedBestOpponentListForSort, new RankedOpponentComparator());
+
+            //rankedBestOpponentListForSort.stream().forEach(availableOpponent -> System.out.println(availableOpponent.getTeamSfId()));
 
             // Work out who should have the home game
 
@@ -269,8 +338,9 @@ public class FixtureManager implements Serializable {
 
             AvailableOpponent homeTeam = currentTeam;
             AvailableOpponent awayTeam = currentOpponent;
-
-            if(fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureStatisticsOpponent().getOpponentSfId().equals(currentOpponent.getTeamSfId())){
+            // If our current home team had the last home game against this opponent, then swap
+            if(fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureStatisticsOpponent(awayTeam.getTeamSfId())!=null
+                    && fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureStatisticsOpponent(awayTeam.getTeamSfId()).getOpponentSfId().equals(currentOpponent.getTeamSfId())){
                 homeTeam = currentOpponent;
                 awayTeam = currentTeam;
             }
@@ -282,13 +352,13 @@ public class FixtureManager implements Serializable {
                 FixtureResultStatistics fixtureResultStatisticsHome = fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureResultStatistics();
                 Integer homeTeamToalGames = Math.toIntExact(fixtureResultStatisticsHome.getMatchesPlayed());
                 Integer homeTeamHOmeGames = Math.toIntExact(fixtureResultStatisticsHome.getHomeGames());
-                Integer homeTeamAverage = (homeTeamToalGames !=null) ? homeTeamHOmeGames/homeTeamToalGames : 0;
+                Double homeTeamAverage = (homeTeamToalGames !=null && homeTeamToalGames!=0) ? Double.valueOf(homeTeamHOmeGames)/Double.valueOf(homeTeamToalGames) : 0;
 
                 //work out away team ave
                 FixtureResultStatistics fixtureResultStatisticsAway = fixtureStatisticsMap.get(awayTeam.getTeamSfId()).getFixtureResultStatistics();
                 Integer awayTeamTotalGames = Math.toIntExact(fixtureResultStatisticsAway.getMatchesPlayed());
                 Integer awayTeamHomeGames = Math.toIntExact(fixtureResultStatisticsAway.getHomeGames());
-                Integer awayTeamAverage = (awayTeamTotalGames !=null)? awayTeamHomeGames/awayTeamTotalGames:0;
+                Double awayTeamAverage = (awayTeamTotalGames !=null && awayTeamTotalGames!=0)? Double.valueOf(awayTeamHomeGames)/Double.valueOf(awayTeamTotalGames):0;
 
                 // If one teams opponent hasn't played any games, but the other team has
                 // then work out if they are above or below their average home games
@@ -308,7 +378,7 @@ public class FixtureManager implements Serializable {
                 else if(homeTeamAverage>awayTeamAverage){
                     homeTeam = currentOpponent;
                     awayTeam = currentTeam;
-                } else if(homeTeamHOmeGames !=null && awayTeamHomeGames !=null && homeTeamAverage>awayTeamAverage){
+                } else if(homeTeamHOmeGames !=null && awayTeamHomeGames !=null && homeTeamAverage.equals(awayTeamAverage)){
                     if(fixtureResultStatisticsHome.getLastHome()>fixtureResultStatisticsAway.getLastHome()){
                         homeTeam = currentOpponent;
                         awayTeam = currentTeam;
@@ -317,18 +387,23 @@ public class FixtureManager implements Serializable {
             }
             //Remove these teams from the avaiable hash
             modifyOption(availableOpponentMapSorted, homeTeam, awayTeam);
+            availableOpponentListForSort.clear();
+            availableOpponentListForSort = availableOpponentMapSorted.values().stream().collect(Collectors.toList());
 
             Match match = new Match();
             match.setHomeTeam(homeTeam);
             match.setAwayTeam(awayTeam);
 
-            Round round = new Round();
-            round.setOrderNumber(currentRound);
+
+            matchList.add(match);
             //List<FixtureStatistics> fixtureStatisticsList = (List<FixtureStatistics>) fixtureStatisticsMap.values();
-            calculateStatistics(fixtureStatistics, round, currentOpponent.getTeamSfId(), currentTeam.getTeamSfId() );
-            return match;
+            fixtureStatistics= calculateStatistics(fixtureStatistics, round, awayTeam.getTeamSfId(), homeTeam.getTeamSfId() );
+            fixtureStatisticsMap.clear();
+            fixtureStatisticsMap =  fixtureStatistics.stream().collect(
+                    Collectors.toMap(FixtureStatistics::getTeamSfId, item ->item));
+
         }
-        return null;
+        return matchList;
     }
 
     private Map<String, AvailableOpponent> getAvailableOpponents(List<Team> teams, Map<String, FixtureStatistics> fixtureStatisticsMap, Integer roundNumber){
@@ -336,29 +411,45 @@ public class FixtureManager implements Serializable {
                 Collectors.toMap(FixtureStatistics::getTeamSfId, item ->item));*/
         Integer minRoundsBetweenEncounters = teams.size()/2;
         Map<String, AvailableOpponent> availableOpponentMap = new HashMap<>();
-        for (Team team: teams) {
-            for (Team opponent:teams) {
-
+        Integer teamIndex = 0;
+        Integer opponentIndex;
+        while (teamIndex < teams.size()) {
+            Team team = teams.get(teamIndex);
+            teamIndex = teamIndex + 1;
+            opponentIndex = 0;
+            while (opponentIndex < teams.size()) {
+                Team opponent = teams.get(opponentIndex);
+                opponentIndex = opponentIndex+1;
                 if(!opponent.getSfid().equals(team.getSfid())){
 
                     FixtureStatistics fs = fixtureStatisticsMap.get(team.getSfid());
                     FixtureResultStatistics fixtureResultStatisticsTeam = fs.getFixtureResultStatistics();
-                    FixtureStatisticsOpponent fixtureStatisticsOpponent = fs.getFixtureStatisticsOpponent();
+                    FixtureStatisticsOpponent fixtureStatisticsOpponent = null;
+
+                    try {
+                        fixtureStatisticsOpponent = fs.getFixtureStatisticsOpponent(opponent.getSfid());
+                    } catch (NullPointerException e){
+                        fixtureStatisticsOpponent = null;
+                    }
 
                     Integer matchesPlayed=0;
                     Integer lastPlayed = 0;
                     Integer teamTotalGames = Math.toIntExact(fixtureResultStatisticsTeam.getMatchesPlayed());
                     Integer teamHomeGames = Math.toIntExact(fixtureResultStatisticsTeam.getHomeGames());
-                    Integer teamHomeAverage = 0;
-                    Integer opponentTotalGames = Math.toIntExact(fixtureStatisticsOpponent.getFixtureResultStatistics().getMatchesPlayed());
-                    Integer opponentHomeGames = Math.toIntExact(fixtureStatisticsOpponent.getFixtureResultStatistics().getHomeGames());
-                    Integer opponentHomeAverage = 0;
+                    Double teamHomeAverage;
+                    Integer opponentTotalGames = 0;
+                    Integer opponentHomeGames = 0;
+                    Double opponentHomeAverage;
 
-                    //how many times has the team played the opponent?
-                    if(fs.getFixtureStatisticsOpponent().getOpponentSfId().equals(opponent.getSfid())){
-                        FixtureResultStatistics fixtureResultStatisticsOpponent = fixtureStatisticsOpponent.getFixtureResultStatistics();
-                        matchesPlayed = Math.toIntExact((fixtureResultStatisticsOpponent.getMatchesPlayed() != 0) ? fixtureResultStatisticsOpponent.getMatchesPlayed() : 0);
-                        lastPlayed = Math.toIntExact((fixtureResultStatisticsOpponent.getLastPlayed() != 0) ? fixtureResultStatisticsOpponent.getLastPlayed() : 0);
+                    if(fixtureStatisticsOpponent!=null){
+                         opponentTotalGames = Math.toIntExact(fixtureStatisticsOpponent.getFixtureResultStatistics().getMatchesPlayed()!=null? fixtureStatisticsOpponent.getFixtureResultStatistics().getMatchesPlayed() : 0);
+                         opponentHomeGames = Math.toIntExact(fixtureStatisticsOpponent.getFixtureResultStatistics().getHomeGames());
+                        //how many times has the team played the opponent?
+                        if(fixtureStatisticsOpponent.getOpponentSfId().equals(opponent.getSfid())){
+                            FixtureResultStatistics fixtureResultStatisticsOpponent = fixtureStatisticsOpponent.getFixtureResultStatistics();
+                            matchesPlayed = Math.toIntExact((fixtureResultStatisticsOpponent.getMatchesPlayed() != 0) ? fixtureResultStatisticsOpponent.getMatchesPlayed() : 0);
+                            lastPlayed = Math.toIntExact((fixtureResultStatisticsOpponent.getLastPlayed() != 0) ? fixtureResultStatisticsOpponent.getLastPlayed() : 0);
+                        }
                     }
 
                     //if played each other before they're suppose to, skip to next opponent
@@ -374,12 +465,12 @@ public class FixtureManager implements Serializable {
                         availableOpponent.setTeamSfId(team.getSfid());
                     }
 
-
                     //If the number of opponents is greater than the number of rounds between playing this opponent
                     //then mark them as having played recently so that we don't prioritise them
+
                     if(lastPlayed==0){
                         FixtureStatisticsOpponent unPlayedOpponent;
-                        if( availableOpponent.getUnplayedOptions().get(opponent.getSfid()) ==null ){
+                        if( availableOpponent.getUnplayedOptions() ==null || availableOpponent.getUnplayedOptions().get(opponent.getSfid()) ==null ){
                             unPlayedOpponent = new FixtureStatisticsOpponent(opponent.getSfid());
                         } else {
                             unPlayedOpponent = availableOpponent.getUnplayedOptions().get(opponent.getSfid());
@@ -388,7 +479,7 @@ public class FixtureManager implements Serializable {
                         availableOpponent.getUnplayedOptions().put(opponent.getSfid(), unPlayedOpponent);
                     } else if(teams.size() - 1 <= roundNumber - lastPlayed){
                         FixtureStatisticsOpponent goodOptionOpponent;
-                        if(availableOpponent.getGoodOptions().get(opponent.getSfid()) == null){
+                        if(availableOpponent.getGoodOptions()==null || availableOpponent.getGoodOptions().get(opponent.getSfid()) == null){
                             goodOptionOpponent = new FixtureStatisticsOpponent(opponent.getSfid());
                         } else {
                             goodOptionOpponent = availableOpponent.getGoodOptions().get(opponent.getSfid());
@@ -397,7 +488,7 @@ public class FixtureManager implements Serializable {
                         availableOpponent.getGoodOptions().put(opponent.getSfid(), goodOptionOpponent);
                     } else {
                         FixtureStatisticsOpponent badOptionOpponent;
-                        if(availableOpponent.getBadOptions().get(opponent.getSfid()) == null){
+                        if(availableOpponent.getBadOptions()==null || availableOpponent.getBadOptions().get(opponent.getSfid()) == null){
                             badOptionOpponent = new FixtureStatisticsOpponent(opponent.getSfid());
                         } else {
                             badOptionOpponent = availableOpponent.getBadOptions().get(opponent.getSfid());
@@ -406,11 +497,14 @@ public class FixtureManager implements Serializable {
                         availableOpponent.getBadOptions().put(opponent.getSfid(), badOptionOpponent);
                     }
 
+                    if(availableOpponent.getOpponents().get(opponent.getSfid()) ==null){
+                        FixtureStatisticsOpponent fso = new FixtureStatisticsOpponent(opponent.getSfid());
+                        availableOpponent.getOpponents().put(opponent.getSfid(), fso);
+                    }
 
-
-                    teamHomeAverage = (teamTotalGames !=null) ? teamHomeGames/teamTotalGames : 0;
-                    opponentHomeAverage = (opponentTotalGames != null) ? opponentHomeGames/opponentTotalGames : 0;
-                    availableOpponent.getOpponents().get(opponent.getSfid()).getFixtureResultStatistics().setHomeAwayDiff(Long.valueOf(Math.abs(teamHomeAverage - opponentHomeAverage)));
+                    teamHomeAverage = (teamTotalGames !=null && teamTotalGames !=0) ? Double.valueOf(teamHomeGames)/Double.valueOf(teamTotalGames) : 0;
+                    opponentHomeAverage = (opponentTotalGames != null && opponentTotalGames != 0) ? Double.valueOf(opponentHomeGames)/Double.valueOf(opponentTotalGames) : 0;
+                    availableOpponent.getOpponents().get(opponent.getSfid()).getFixtureResultStatistics().setHomeAwayDiff(Long.valueOf((long) Math.abs(teamHomeAverage - opponentHomeAverage)));
 
                     availableOpponent.setBadOptionsCount(availableOpponent.getBadOptions().size());
                     availableOpponent.setUnplayedOptionsCount(availableOpponent.getUnplayedOptions().size());
@@ -425,6 +519,8 @@ public class FixtureManager implements Serializable {
     }
 
     public void modifyOption(Map<String, AvailableOpponent> availableOpponentsList, AvailableOpponent homeTeam, AvailableOpponent awayTeam){
+        availableOpponentsList.remove(homeTeam.getTeamSfId());
+        availableOpponentsList.remove(awayTeam.getTeamSfId());
         availableOpponentsList.forEach((k,availableOpponent)->{
             availableOpponent.getOpponents().remove(homeTeam.getTeamSfId());
             availableOpponent.getUnplayedOptions().remove(homeTeam.getTeamSfId());
