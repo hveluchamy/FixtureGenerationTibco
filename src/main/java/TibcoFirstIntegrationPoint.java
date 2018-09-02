@@ -20,7 +20,9 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         ThirdClassWithParam tc = new ThirdClassWithParam();
               System.out.print(tc.returnParamTest("value from main"));
         LOG.info("Imported log4j from maven");*/
-       // testComparatorSort();
+
+
+       //testComparatorSort();
 
 
 
@@ -149,13 +151,15 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         availableOpponent.setOptionCount(5);
 
         AvailableOpponent availableOpponent1 = new AvailableOpponent();
-        availableOpponent1.setOptionCount(3);
+        availableOpponent1.setOptionCount(2);
 
         AvailableOpponent availableOpponent2 = new AvailableOpponent();
         availableOpponent2.setGoodOptionsCount(3);
+        availableOpponent2.setOptionCount(1);
 
         AvailableOpponent availableOpponent3 = new AvailableOpponent();
         availableOpponent3.setGoodOptionsCount(2);
+        availableOpponent3.setOptionCount(2);
 
         AvailableOpponent availableOpponent4 = new AvailableOpponent();
         availableOpponent4.setUnplayedOptionsCount(3);
@@ -182,7 +186,8 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         availableOpponent11.setUnplayedOptionsCount(7);
 
         AvailableOpponent availableOpponent12 = new AvailableOpponent();
-        availableOpponent12.setTeamHomeRatio(2L);
+        //availableOpponent12.setTeamHomeRatio(2L);
+        availableOpponent12.setOptionCount(1);
 
         availableOpponent.setTeamSfId("testAV");
         availableOpponent1.setTeamSfId("testAV1");

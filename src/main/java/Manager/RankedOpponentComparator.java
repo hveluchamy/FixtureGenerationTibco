@@ -23,24 +23,23 @@ public class RankedOpponentComparator implements Comparator<AvailableOpponent> {
               || Math.sign(availableOpponents[team.key]['opponents'][b.key]['home_away_diff']) - Math.sign(availableOpponents[team.key]['opponents'][a.key]['home_away_diff'])
             });*/
 
-        if(o1.getUnplayedOptionsCount() != null && o2.getUnplayedOptionsCount() != null){
-            return Integer.valueOf(o1.getUnplayedOptionsCount().compareTo(o2.getUnplayedOptionsCount()));
-        }
-
         if(o1.getOptionCount() != null && o2.getOptionCount() != null){
             return Integer.valueOf(o1.getOptionCount().compareTo(o2.getOptionCount()));
         }
 
-        if(o1.getGoodOptionsCount() != null && o2.getGoodOptionsCount() != null){
+        if(o1.getBadOptionsCount() != null && o2.getBadOptionsCount() != null){
             return Integer.valueOf(o2.getBadOptionsCount().compareTo(o1.getBadOptionsCount()));
         }
 
+        if(o1.getUnplayedOptionsCount() != null && o2.getUnplayedOptionsCount() != null){
+            return Integer.valueOf(o1.getUnplayedOptionsCount().compareTo(o2.getUnplayedOptionsCount()));
+        }
 
-
-        if(o1.getBadOptionsCount() != null && o2.getBadOptionsCount() != null){
+        if(o1.getGoodOptionsCount() != null && o2.getGoodOptionsCount() != null){
             return Integer.valueOf(o1.getGoodOptionsCount().compareTo(o2.getGoodOptionsCount()));
         }
 
+        //TODO - this might be wrong. need to add matches of all opponents
         if(o1.getOpponents().get(o1.getTeamSfId()).getFixtureResultStatistics().getMatchesPlayed() != null
                 && o2.getOpponents().get(o2.getTeamSfId()).getFixtureResultStatistics().getMatchesPlayed() !=null){
             return  Integer.valueOf(o1.getOpponents().get(o1.getTeamSfId()).getFixtureResultStatistics().getMatchesPlayed()

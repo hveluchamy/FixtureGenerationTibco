@@ -74,7 +74,7 @@ public class FixtureManager implements Serializable {
             Team team = new Team();
             team.setSfid("Bye");
             team.setName("Bye");
-            teams.add(0, team);
+            teams.add(team);
 
         }
     }
@@ -183,7 +183,7 @@ public class FixtureManager implements Serializable {
         Long currentStreak;
         //home game stats
 
-       if(teamSfid.equals(homeTeamSfid)){
+      /* if(teamSfid.equals(homeTeamSfid)){
 
            //frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
            fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
@@ -207,10 +207,10 @@ public class FixtureManager implements Serializable {
                fr.setAwayDistribution(currentStreak-1);
            }
            fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
-       }
+       }*/
 
-       //The one below is translated from nodejs. aboce is the modification
-       /* if(teamSfid.equals(homeTeamSfid)){
+       /*//The one below is translated from nodejs. aboce is the modification
+        if(teamSfid.equals(homeTeamSfid)){
             //TODO - verify why to increament opponents home game
             frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
             fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
@@ -233,6 +233,32 @@ public class FixtureManager implements Serializable {
             }
             fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
         }*/
+
+       //The one below is translated from nodejs. aboce is the modification
+       if(teamSfid.equals(homeTeamSfid)){
+           //TODO - verify why to increament opponents home game
+           frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
+           fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
+           //TODO - verify whey set this to 1 for home game in opponent
+           frsOpponent.setLastHome(1L);
+           fr.setLastHome(increamentPropertyValueByOne(fr.getLastHome()));
+           currentStreak = fr.getLastHome();
+           fr.setLastAway(0L);
+           if(fr.getLastHome()>1){
+               //remove streak
+               fr.setHomeDistribution(currentStreak-1);
+           }
+           fr.setHomeDistribution(increamentPropertyValueByOne(currentStreak));
+       } else {
+           frsOpponent.setLastHome(0L);
+           fr.setLastHome(0L);
+           fr.setLastAway(increamentPropertyValueByOne(fr.getLastAway()));
+           currentStreak = fr.getLastAway();
+           if(fr.getLastAway()>1){
+               fr.setAwayDistribution(currentStreak-1);
+           }
+           fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
+       }
 
         fo.setFixtureResultStatistics(frsOpponent);
         f.addFixtureStatisticsOpponent(fo);
@@ -297,10 +323,10 @@ public class FixtureManager implements Serializable {
             //TODO - need to verify during debugging
             AvailableOpponent currentTeam = availableOpponentListForSort.get(0);
 
-            if (currentTeam.getGoodOptionsCount()>0){
-                bestOpponents = currentTeam.getGoodOptions();
-            } else if(currentTeam.getUnplayedOptionsCount()>0){
+            if (currentTeam.getUnplayedOptionsCount()>0){
                 bestOpponents = currentTeam.getUnplayedOptions();
+            } else if(currentTeam.getGoodOptionsCount()>0){
+                bestOpponents = currentTeam.getGoodOptions();
             } else {
                 bestOpponents = currentTeam.getBadOptions();
             }
@@ -338,9 +364,14 @@ public class FixtureManager implements Serializable {
 
             AvailableOpponent homeTeam = currentTeam;
             AvailableOpponent awayTeam = currentOpponent;
+
+            /*// If our current home team had the last home game against this opponent, then swap
+            if (fixtureStatistics[homeTeam.sfid]['opponents'].hasOwnProperty(awayTeam.sfid)
+            && fixtureStatistics[homeTeam.sfid]['opponents'][awayTeam.sfid]['last_home']) {
+            */
             // If our current home team had the last home game against this opponent, then swap
             if(fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureStatisticsOpponent(awayTeam.getTeamSfId())!=null
-                    && fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureStatisticsOpponent(awayTeam.getTeamSfId()).getOpponentSfId().equals(currentOpponent.getTeamSfId())){
+                    && fixtureStatisticsMap.get(homeTeam.getTeamSfId()).getFixtureStatisticsOpponent(awayTeam.getTeamSfId()).getFixtureResultStatistics().getLastHome()>0){
                 homeTeam = currentOpponent;
                 awayTeam = currentTeam;
             }
