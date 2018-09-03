@@ -13,6 +13,16 @@ public class TibcoFixtureGenerationDto implements Serializable {
     public List<Location> locations;
     public Integer maxRounds;
 
+    public List<RoundDto> getRounds() {
+        return rounds;
+    }
+
+    public void setRounds(List<RoundDto> rounds) {
+        this.rounds = rounds;
+    }
+
+    public List<RoundDto> rounds;
+
     public Competition getCompetition() {
         return competition;
     }

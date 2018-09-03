@@ -6,6 +6,7 @@ import java.util.List;
 public class Round implements Serializable {
     private String name;
     private double orderNumber;
+    private double number;
     private String isArchived;
     private java.sql.Date startDate;
     private java.sql.Date endDate;
@@ -141,5 +142,13 @@ public class Round implements Serializable {
 
     public void setNew(Boolean aNew) {
         isNew = aNew;
+    }
+
+    public double getNumber() {
+        return number;
+    }
+
+    public void setNumber(double number) {
+        this.number = number;
     }
 }

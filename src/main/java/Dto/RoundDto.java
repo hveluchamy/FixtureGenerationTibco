@@ -1,11 +1,20 @@
 package Dto;
 
-import Entity.AvailableOpponent;
+import Dao.MatchDto;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class RoundDto implements Serializable {
+
+
+    public double number;
+    private double order_number;
+    private String name;
+    private List<MatchDto> matches;
+
     public String getName() {
         return name;
     }
@@ -14,26 +23,29 @@ public class RoundDto implements Serializable {
         this.name = name;
     }
 
-    public double getOrderNumber() {
-        return orderNumber;
+    public double getOrder_number() {
+        return order_number;
     }
 
-    public void setOrderNumber(double orderNumber) {
-        this.orderNumber = orderNumber;
+    public void setOrder_number(double order_number) {
+        this.order_number = order_number;
     }
 
-    private String name;
-    private double orderNumber;
 
-    public Map<String, String> getHomeAndAwayTeam() {
-        return homeAndAwayTeam;
+    public double getNumber() {
+        return number;
     }
 
-    public void setHomeAndAwayTeam(Map<String, String> homeAndAwayTeam) {
-        this.homeAndAwayTeam = homeAndAwayTeam;
+    public void setNumber(double number) {
+        this.number = number;
     }
 
-    private Map<String, String> homeAndAwayTeam;
 
+    public List<MatchDto> getMatches() {
+        return matches;
+    }
 
+    public void setMatches(List<MatchDto> matches) {
+        this.matches = matches;
+    }
 }

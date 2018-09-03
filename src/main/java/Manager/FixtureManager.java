@@ -1,6 +1,7 @@
 package Manager;
 
 import Dao.FixtureDao;
+import Dao.MatchDto;
 import Dto.FixtureTeamRoundDto;
 import Dto.RoundDto;
 import Dto.TibcoFixtureGenerationDto;
@@ -19,16 +20,20 @@ public class FixtureManager implements Serializable {
     public void startFixtureGeneration( TibcoFixtureGenerationDto tibcoFixtureGenerationDto) throws Exception {
 
         List<Team> teams = tibcoFixtureGenerationDto.getTeams();
+
+        Map<String, Team> teamMap = teams.stream().collect(Collectors.toMap(Team::getSfid, item->item));
         List<FixtureTeamRoundDto> fixtureTeamRoundDtos;
         List<String> playedRounds;
         Integer roundsToGenerate;
         String competitionId = tibcoFixtureGenerationDto.getCompetition().getSfId();
 
+        TeamManager teamManager = new TeamManager();
+
         LocationManager locationManager = new LocationManager();
         RoundsManager roundsManager = new RoundsManager();
         //TODO delete lcoationtimeslot and delete unplayed rounds - lines commented below for test purpose
-       // locationManager.deleteLocationTimeSlots(competitionId);
-        //roundsManager.deleteUnplayedRounds(competitionId);
+        locationManager.deleteLocationTimeSlots(competitionId);
+        roundsManager.deleteUnplayedRounds(competitionId);
 
         try {
 
@@ -41,7 +46,8 @@ public class FixtureManager implements Serializable {
             //playedRounds = (List<String>) rounds;
             playedRounds = rounds.stream().collect(Collectors.toList());
             roundsToGenerate = tibcoFixtureGenerationDto.getMaxRounds() - playedRounds.size();
-            assignByeTeam(teams);
+
+            teamManager.assignByeTeam(teams);
             if(roundsToGenerate>0){
                 List<FixtureStatistics> fixtureStatisticsList = getInitFixtureStatistics(teams);
                 List<Round> roundList = addExistingFixtures(fixtureTeamRoundDtos, fixtureStatisticsList, playedRounds, teams);
@@ -51,17 +57,42 @@ public class FixtureManager implements Serializable {
                                                                     {
                                                                         RoundDto dto = new RoundDto();
                                                                         dto.setName(round.getName());
-                                                                        dto.setOrderNumber(round.getOrderNumber());
-                                                                        Map<String, String> homeAndAwayTeam = new HashMap<>();
+                                                                        dto.setOrder_number(round.getOrderNumber());
+                                                                        dto.setNumber(round.getOrderNumber());
+                                                                        List<MatchDto> matchDtos = new ArrayList<>();
                                                                         for (Match matc: round.getMatch()
                                                                              ) {
-                                                                            homeAndAwayTeam.put(matc.getHomeTeam().getTeamSfId(), matc.getAwayTeam().getTeamSfId());
+                                                                            MatchDto matchDto = new MatchDto();
+
+                                                                            String homeTeamSfId = matc.getHomeTeam().getTeamSfId();
+                                                                            String awayTeamSfId = matc.getAwayTeam().getTeamSfId();
+                                                                            if(homeTeamSfId.equals("Bye")){
+                                                                                matchDto.setHome("Bye");
+                                                                            } else {
+                                                                                matchDto.setHome(homeTeamSfId  + (teamMap.get(homeTeamSfId).getExternalidC() == 0? "" : ";" + teamMap.get(homeTeamSfId).getExternalidC())
+                                                                                        + (teamMap.get(homeTeamSfId).getName() ==null? "" : ";" + teamMap.get(homeTeamSfId).getName())
+                                                                                );
+                                                                            }
+
+                                                                            if(awayTeamSfId.equals("Bye")){
+                                                                                matchDto.setAway("Bye");
+                                                                            } else {
+                                                                                matchDto.setAway(awayTeamSfId + ";" + (teamMap.get(awayTeamSfId).getExternalidC()== 0? "" : ";" + teamMap.get(awayTeamSfId).getExternalidC())
+                                                                                        + (teamMap.get(awayTeamSfId).getName() ==null? "" : ";" + teamMap.get(awayTeamSfId).getName()));
+                                                                            }
+
+                                                                            matchDtos.add(matchDto);
                                                                         }
-                                                                        dto.setHomeAndAwayTeam(homeAndAwayTeam);
+                                                                        dto.setMatches(matchDtos);
                                                                         return dto;
                                                                     }).collect(Collectors.toList());
                 String jsonStr = new Gson().toJson(newRoundDto);
+                tibcoFixtureGenerationDto.setRounds(newRoundDto);
+                String tibcoDtroJson = new Gson().toJson(tibcoFixtureGenerationDto);
+
                 System.out.println("Finished genearting rounds " + jsonStr );
+
+                System.out.println("Finished genearting rounds " + tibcoDtroJson );
 
             }
         } catch (SQLException e) {
@@ -69,15 +100,7 @@ public class FixtureManager implements Serializable {
         }
     }
 
-    private void assignByeTeam(List<Team> teams){
-        if(teams.size()!=0 && teams.size() % 2 != 0){
-            Team team = new Team();
-            team.setSfid("Bye");
-            team.setName("Bye");
-            teams.add(team);
 
-        }
-    }
 
     private List<FixtureStatistics> getInitFixtureStatistics(List<Team> teams) {
         return teams.stream().map(team -> getInitFixtureStatisticsPerTeam(team.getSfid())).collect(Collectors.toList());
@@ -121,7 +144,9 @@ public class FixtureManager implements Serializable {
 
             for (FixtureTeamRoundDto fixtureTeamRoundDto:fixtureTeamRoundDtos
                  ) {
-                 addGameToFixture(fixtureTeamRoundDto, fixtureStatisticsList, round);
+
+                 List<Match> matches = new ArrayList<>();
+                 addGameToFixture(fixtureTeamRoundDto, fixtureStatisticsList, round, matches);
             }
 
 
@@ -133,10 +158,23 @@ public class FixtureManager implements Serializable {
     }
 
 
-    private List<FixtureStatistics> addGameToFixture(FixtureTeamRoundDto fixtureTeamRoundDto, List<FixtureStatistics> fixtureStatistics, Round round){
+    private List<FixtureStatistics> addGameToFixture(FixtureTeamRoundDto fixtureTeamRoundDto, List<FixtureStatistics> fixtureStatistics, Round round, List<Match> matches){
         //TODO - add bye team if teamid is null - check after debugging
         String homeTeamId = fixtureTeamRoundDto.getFixture().getHomeTeamId();
         String awayTeamId = fixtureTeamRoundDto.getFixture().getAwayTeamId();
+
+        Match match = new Match();
+        AvailableOpponent homeTeam = new AvailableOpponent();
+        homeTeam.setTeamSfId(homeTeamId);
+
+        AvailableOpponent awayTeam = new AvailableOpponent();
+        awayTeam.setTeamSfId(awayTeamId);
+
+        match.setHomeTeam(homeTeam);
+        match.setAwayTeam(awayTeam);
+
+        matches.add(match);
+
         return calculateStatistics(fixtureStatistics, round, awayTeamId, homeTeamId);
     }
 
