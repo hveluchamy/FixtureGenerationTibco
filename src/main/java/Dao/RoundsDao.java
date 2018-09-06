@@ -40,7 +40,7 @@ public class RoundsDao extends SuperDao implements Serializable{
 
     public void deleteUnplayedRounds(String compId) throws SQLException {
         String updateTableSQL = DELETE_UNPLAYED_ROUNDS_SQL;
-        jdbcExecuteUpdateTwoParameter(compId, updateTableSQL);
+        jdbcExecuteUpdateTwoStringParameters(compId, compId, updateTableSQL);
     }
 
 

@@ -35,13 +35,13 @@ public class SuperDao implements Serializable {
     }
 
 
-    public void jdbcExecuteUpdateTwoParameter(String compId, String updateTableSQL) throws SQLException {
+    public void jdbcExecuteUpdateTwoStringParameters(String param1, String param2, String updateTableSQL) throws SQLException {
         Connection dbConnection = getConnection();
         try{
             dbConnection.setAutoCommit(false);
             PreparedStatement preparedStatement = dbConnection.prepareStatement(updateTableSQL);
-            preparedStatement.setString(1,compId);
-            preparedStatement.setString(2,compId);
+            preparedStatement.setString(1,param1);
+            preparedStatement.setString(2,param2);
             preparedStatement.executeUpdate();
             dbConnection.commit();
         } catch (SQLException e){
