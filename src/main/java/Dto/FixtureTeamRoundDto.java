@@ -7,6 +7,7 @@ import java.util.Date;
 
 public class FixtureTeamRoundDto implements Serializable {
     private Fixture fixture;
+    private String fixtureId;
     private String homeTeamId;
     private String awayTeamId;
     private Date roundStartDate;
@@ -81,5 +82,13 @@ public class FixtureTeamRoundDto implements Serializable {
 
     public void setRoundName(String roundName) {
         this.roundName = roundName;
+    }
+
+    public String getFixtureId() {
+        return fixtureId;
+    }
+
+    public void setFixtureId(String fixtureId) {
+        this.fixtureId = fixtureId;
     }
 }

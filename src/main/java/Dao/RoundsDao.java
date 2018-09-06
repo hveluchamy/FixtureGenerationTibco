@@ -1,16 +1,18 @@
 package Dao;
 
 import Dto.FixtureTeamRoundDto;
+import Dto.RoundDto;
 import Entity.Round;
 import JDBC.JDBCConnection;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class RoundsDao implements Serializable {
+public class RoundsDao extends SuperDao implements Serializable{
     Logger LOG = Logger.getLogger(RoundsDao.class);
 
   /*  public String getRoundNameFromId(String roundId) throws SQLException {
@@ -55,9 +57,7 @@ public class RoundsDao implements Serializable {
     }
 
     private void jdbcExecuteUpdate(String compId, String updateTableSQL) throws SQLException {
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
+        Connection dbConnection = getConnection();
 
         try{
             dbConnection.setAutoCommit(false);
@@ -75,16 +75,18 @@ public class RoundsDao implements Serializable {
     }
 
 
-    public List<FixtureTeamRoundDto> getRoundFixtures(List<Integer> fixtureIds) throws SQLException {
-        FixtureTeamRoundDto fixtureTeamRoundDto = new FixtureTeamRoundDto();
+    public List<RoundDto> getRoundListByCompetitionId(String compId){
+        List<RoundDto> roundDtoList = new ArrayList<>();
+        Connection dbConnection = getConnection();
 
-        /*fixture.round, fixture.id, hometeam.competition_team as "hometeam_id",
-                awayteam.competition_team as "awayteam_id*/
+        return roundDtoList;
+    }
 
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
-      /*  String selectSql = "SELECT fixture.round, fixture.id, hometeam.competition_team homeTeamId," +
+
+    public List<FixtureTeamRoundDto> getRoundFixturesByFixtureIdList(List<Integer> fixtureIds) throws SQLException {
+        List<FixtureTeamRoundDto> fixtureTeamRoundDtoList = new ArrayList<>();
+        Connection dbConnection = getConnection();
+        String selectSql = "SELECT fixture.round round, fixture.id fixtureId, hometeam.competition_team homeTeamId," +
                 "  awayteam.competition_team  awayTeamId" +
                 "                     FROM        heroku.fixture fixture\n" +
                 "                  JOIN        heroku.round as  round \n"+
@@ -92,24 +94,26 @@ public class RoundsDao implements Serializable {
         " LEFT JOIN heroku.fixtureteam hometeam ON fixture.id = hometeam.fixture and hometeam.home_away ='Home'\n" +
         " LEFT JOIN heroku.fixtureteam awayteam ON fixture.id = awayteam.fixture and awayteam.home_away = 'Away'\n" +
         " WHERE 1 = 1 " +
-                "                    AND fixture.id = ANY(?)  ;";*/
+                "                    AND fixture.id = ANY(?)  ;";
 
 
-        String selectSql = " select *\n" +
-                " from heroku.fixture where id = ANY (?)  ;";
 
         try {
             dbConnection.setAutoCommit(false);
             PreparedStatement preparedStatement = dbConnection.prepareStatement(selectSql);
-            Integer[] fistIdStringAray = fixtureIds.toArray(new Integer[0]);
-
-            //preparedStatement.setArray(1, conn.createArrayOf("INTEGER", some_ids.toArray()));
             Array array =  dbConnection.createArrayOf("INTEGER", fixtureIds.toArray());
 
             preparedStatement.setArray(1, array);
             ResultSet result = preparedStatement.executeQuery();
             while (result.next() ){
-               System.out.println(result.getString("competition"));
+                FixtureTeamRoundDto fixtureTeamRoundDto = new FixtureTeamRoundDto();
+                fixtureTeamRoundDto.setRoundId(result.getString("round"));
+                fixtureTeamRoundDto.setFixtureId(result.getString("fixtureId"));
+                fixtureTeamRoundDto.setHomeTeamId(result.getString("homeTeamId"));
+                fixtureTeamRoundDto.setAwayTeamId(result.getString("awayTeamId"));
+
+                fixtureTeamRoundDtoList.add(fixtureTeamRoundDto);
+
             }
         } catch (SQLException e){
             dbConnection.rollback();
@@ -119,6 +123,6 @@ public class RoundsDao implements Serializable {
             dbConnection.close();
         }
 
-        return null;
+        return fixtureTeamRoundDtoList;
     }
 }

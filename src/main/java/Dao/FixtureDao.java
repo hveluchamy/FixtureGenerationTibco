@@ -13,7 +13,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class FixtureDao implements Serializable {
+public class FixtureDao extends SuperDao implements Serializable {
     Logger LOG = Logger.getLogger(FixtureDao.class);
     public void clearLocationTimeSlotFromFixture(String compId) throws SQLException {
         String updateTableSQL = " UPDATE heroku.fixture \n" +
@@ -40,9 +40,7 @@ public class FixtureDao implements Serializable {
                 "                    AND f.status NOT IN ('Draft', 'Published')\n" +
                 "                    ORDER BY f.round, f.id ASC;";
 
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
+        Connection dbConnection = getConnection();
         try{
             dbConnection.setAutoCommit(false);
             PreparedStatement preparedStatement = dbConnection.prepareStatement(selectSql);
@@ -79,9 +77,7 @@ public class FixtureDao implements Serializable {
     }
 
     private void jdbcExecuteUpdate(String compId, String updateTableSQL) throws SQLException {
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
+        Connection dbConnection = getConnection();
 
         try{
             dbConnection.setAutoCommit(false);

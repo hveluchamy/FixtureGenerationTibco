@@ -26,9 +26,7 @@ public class LocationDao implements Serializable {
     }
 
     private void jdbcExecuteUpdate(String compId, String updateTableSQL) throws SQLException {
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
+        Connection dbConnection = getConnection();
 
         try{
             dbConnection.setAutoCommit(false);
@@ -42,5 +40,12 @@ public class LocationDao implements Serializable {
         } finally {
             dbConnection.close();
         }
+    }
+
+    private Connection getConnection() {
+        JDBCConnection jdbcConnection = new JDBCConnection();
+        Connection dbConnection = null;
+        dbConnection = jdbcConnection.getDbConnection();
+        return dbConnection;
     }
 }

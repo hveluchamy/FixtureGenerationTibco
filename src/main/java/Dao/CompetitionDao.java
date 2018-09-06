@@ -10,16 +10,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class CompetitionDao implements Serializable {
+public class CompetitionDao extends SuperDao implements Serializable {
     Logger LOG = Logger.getLogger(CompetitionDao.class);
     public Competition getCompetitionById(String compId) throws SQLException {
         String selectSql = "SELECT *\n" +
                 "                    FROM salesforce.competition__c\n" +
                 "                    WHERE (sfid = ?);";
 
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
+        Connection dbConnection = getConnection();
         try{
             dbConnection.setAutoCommit(false);
             PreparedStatement preparedStatement = dbConnection.prepareStatement(selectSql);

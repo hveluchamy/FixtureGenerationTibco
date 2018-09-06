@@ -1,5 +1,4 @@
 import Dao.RoundsDao;
-import Dto.RoundDto;
 import Dto.TibcoFixtureGenerationDto;
 import Entity.*;
 import Manager.FixtureManager;
@@ -24,7 +23,7 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         fixtureIds.add(53610);
         fixtureIds.add(53616);
 
-        roundsDao.getRoundFixtures(fixtureIds);
+        roundsDao.getRoundFixturesByFixtureIdList(fixtureIds);
 
 
 
