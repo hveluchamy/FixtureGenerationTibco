@@ -1,7 +1,7 @@
 package Manager;
 
 import Dao.FixtureDao;
-import Dao.MatchDto;
+import Dto.MatchDto;
 import Dto.FixtureTeamRoundDto;
 import Dto.RoundDto;
 import Dto.TibcoFixtureGenerationDto;

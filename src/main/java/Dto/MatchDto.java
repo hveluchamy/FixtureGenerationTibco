@@ -1,4 +1,4 @@
-package Dao;
+package Dto;
 
 public class MatchDto {
     public String getHome() {

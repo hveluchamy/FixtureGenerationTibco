@@ -1,7 +1,7 @@
 package Entity;
 
 public class CompetitionTeam {
-    private long id;
+    private Integer id;
     private java.sql.Date dateAdded;
     private String hideFromLadder;
     private double ranking;
@@ -20,8 +20,8 @@ public class CompetitionTeam {
     private String reason;
     private String competitionOrganisationOwner;
     private double ppaBudget;
-    private String isArchived;
-    private String hasMoved;
+    private Boolean isArchived;
+    private Boolean hasMoved;
     private double timesMoved;
     private String publishOnWebsite;
     private String carryAcrossLadderPoints;
@@ -39,11 +39,11 @@ public class CompetitionTeam {
     private String competitionTeamAbbreviatedName;
 
 
-    public long getId() {
+    public Integer getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -210,20 +210,20 @@ public class CompetitionTeam {
     }
 
 
-    public String getIsArchived() {
+    public Boolean getIsArchived() {
         return isArchived;
     }
 
-    public void setIsArchived(String isArchived) {
+    public void setIsArchived(Boolean isArchived) {
         this.isArchived = isArchived;
     }
 
 
-    public String getHasMoved() {
+    public Boolean getHasMoved() {
         return hasMoved;
     }
 
-    public void setHasMoved(String hasMoved) {
+    public void setHasMoved(Boolean hasMoved) {
         this.hasMoved = hasMoved;
     }
 

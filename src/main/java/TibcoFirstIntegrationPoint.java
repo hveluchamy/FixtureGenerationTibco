@@ -1,3 +1,5 @@
+import Dao.RoundsDao;
+import Dto.RoundDto;
 import Dto.TibcoFixtureGenerationDto;
 import Entity.*;
 import Manager.FixtureManager;
@@ -13,6 +15,16 @@ public class TibcoFirstIntegrationPoint implements Serializable {
     public static void main(String[] args) throws SQLException {
         final Logger LOG = Logger.getLogger(TibcoFirstIntegrationPoint.class);
 
+        RoundsDao roundsDao= new RoundsDao();
+        List<Integer> fixtureIds = new ArrayList<>();
+        fixtureIds.add(53384);
+        fixtureIds.add(53595);
+
+        fixtureIds.add(53600);
+        fixtureIds.add(53610);
+        fixtureIds.add(53616);
+
+        roundsDao.getRoundFixtures(fixtureIds);
 
 
 

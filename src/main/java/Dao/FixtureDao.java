@@ -22,7 +22,7 @@ public class FixtureDao implements Serializable {
                 "                      id IN (SELECT f.id FROM salesforce.competition__c c \n" +
                 "                        INNER JOIN heroku.round r on r.competition=c.sfid \n" +
                 "                        INNER JOIN heroku.fixture f on f.round = r.id \n" +
-                "                        WHERE c.sfid = ?1\n" +
+                "                        WHERE c.sfid = ?\n" +
                 "                        AND r.is_deleted = TRUE \n" +
                 "                      );";
 

@@ -1,14 +1,14 @@
 package Dao;
 
+import Dto.FixtureTeamRoundDto;
 import Entity.Round;
 import JDBC.JDBCConnection;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class RoundsDao implements Serializable {
     Logger LOG = Logger.getLogger(RoundsDao.class);
@@ -72,5 +72,53 @@ public class RoundsDao implements Serializable {
         } finally {
             dbConnection.close();
         }
+    }
+
+
+    public List<FixtureTeamRoundDto> getRoundFixtures(List<Integer> fixtureIds) throws SQLException {
+        FixtureTeamRoundDto fixtureTeamRoundDto = new FixtureTeamRoundDto();
+
+        /*fixture.round, fixture.id, hometeam.competition_team as "hometeam_id",
+                awayteam.competition_team as "awayteam_id*/
+
+        JDBCConnection jdbcConnection = new JDBCConnection();
+        Connection dbConnection = null;
+        dbConnection = jdbcConnection.getDbConnection();
+      /*  String selectSql = "SELECT fixture.round, fixture.id, hometeam.competition_team homeTeamId," +
+                "  awayteam.competition_team  awayTeamId" +
+                "                     FROM        heroku.fixture fixture\n" +
+                "                  JOIN        heroku.round as  round \n"+
+        " ON fixture.round = round.id and round.is_deleted = FALSE and round.is_archived = FALSE \n" +
+        " LEFT JOIN heroku.fixtureteam hometeam ON fixture.id = hometeam.fixture and hometeam.home_away ='Home'\n" +
+        " LEFT JOIN heroku.fixtureteam awayteam ON fixture.id = awayteam.fixture and awayteam.home_away = 'Away'\n" +
+        " WHERE 1 = 1 " +
+                "                    AND fixture.id = ANY(?)  ;";*/
+
+
+        String selectSql = " select *\n" +
+                " from heroku.fixture where id = ANY (?)  ;";
+
+        try {
+            dbConnection.setAutoCommit(false);
+            PreparedStatement preparedStatement = dbConnection.prepareStatement(selectSql);
+            Integer[] fistIdStringAray = fixtureIds.toArray(new Integer[0]);
+
+            //preparedStatement.setArray(1, conn.createArrayOf("INTEGER", some_ids.toArray()));
+            Array array =  dbConnection.createArrayOf("INTEGER", fixtureIds.toArray());
+
+            preparedStatement.setArray(1, array);
+            ResultSet result = preparedStatement.executeQuery();
+            while (result.next() ){
+               System.out.println(result.getString("competition"));
+            }
+        } catch (SQLException e){
+            dbConnection.rollback();
+            LOG.error(e);
+            return null;
+        } finally {
+            dbConnection.close();
+        }
+
+        return null;
     }
 }

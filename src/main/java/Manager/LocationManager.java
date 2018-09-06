@@ -6,6 +6,7 @@ import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.util.List;
 
 public class LocationManager implements Serializable {
     Logger LOG = Logger.getLogger(LocationManager.class);
@@ -21,4 +22,9 @@ public class LocationManager implements Serializable {
 
 
     }
+
+    public void allocationFixtures(String competitionId, List<String>fixtureIds, boolean isFinal){
+
+    }
+
 }

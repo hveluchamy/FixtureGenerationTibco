@@ -58,7 +58,7 @@ public class JDBCConnection implements Serializable {
             while ( rs.next() )
             {
                 Competition competition = new Competition();
-                competition.setId(Long.valueOf(rs.getString ("id")));
+                competition.setId(Integer.valueOf(rs.getString ("id")));
                 competition.setName(rs.getString ("competition_team_name"));
                 listOfBlogs.add(competition);
             }
