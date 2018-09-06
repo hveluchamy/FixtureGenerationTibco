@@ -1,14 +1,11 @@
 package Dao;
 
-import JDBC.JDBCConnection;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class LocationDao implements Serializable {
+public class LocationDao extends SuperDao implements Serializable {
     Logger LOG = Logger.getLogger(LocationDao.class);
     public void deleteLocationTimeSlots(String compId) throws SQLException {
         String updateTableSQL = "DELETE FROM heroku.locationtimeslot \n" +
@@ -21,31 +18,8 @@ public class LocationDao implements Serializable {
                 "                        AND r.is_deleted = TRUE \n" +
                 "                      );";
 
-        jdbcExecuteUpdate(compId, updateTableSQL);
+        jdbcExecuteUpdateWithOneParameter(compId, updateTableSQL);
 
     }
 
-    private void jdbcExecuteUpdate(String compId, String updateTableSQL) throws SQLException {
-        Connection dbConnection = getConnection();
-
-        try{
-            dbConnection.setAutoCommit(false);
-            PreparedStatement preparedStatement = dbConnection.prepareStatement(updateTableSQL);
-            preparedStatement.setString(1,compId);
-            preparedStatement.executeUpdate();
-            dbConnection.commit();
-        } catch (SQLException e){
-            dbConnection.rollback();
-            LOG.error(e);
-        } finally {
-            dbConnection.close();
-        }
-    }
-
-    private Connection getConnection() {
-        JDBCConnection jdbcConnection = new JDBCConnection();
-        Connection dbConnection = null;
-        dbConnection = jdbcConnection.getDbConnection();
-        return dbConnection;
-    }
 }

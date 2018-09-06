@@ -75,8 +75,6 @@ public class JDBCConnection implements Serializable {
     {
         Connection conn = null;
         Properties properties = getConnectionProperties();
-
-
         try
         {
             Class.forName(String.valueOf(properties.get("postgres.driver")));
