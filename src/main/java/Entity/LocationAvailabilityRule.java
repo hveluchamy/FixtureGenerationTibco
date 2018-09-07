@@ -27,6 +27,8 @@ public class LocationAvailabilityRule {
     private String hcErr;
     private String issfupdate;
 
+    //Transient
+    private String locationTimeZone;
 
     public String getName() {
         return name;
@@ -250,5 +252,13 @@ public class LocationAvailabilityRule {
 
     public void setIssfupdate(String issfupdate) {
         this.issfupdate = issfupdate;
+    }
+
+    public String getLocationTimeZone() {
+        return locationTimeZone;
+    }
+
+    public void setLocationTimeZone(String locationTimeZone) {
+        this.locationTimeZone = locationTimeZone;
     }
 }

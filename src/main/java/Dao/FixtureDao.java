@@ -13,6 +13,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FixtureDao extends SuperDao implements Serializable {
+    public static final String CLEAR_TIMESLOT_UPDATE_SQL = " UPDATE heroku.fixture \n" +
+            "                    SET location_timeslot = null \n" +
+            "                    WHERE \n" +
+            "                      id IN (SELECT f.id FROM salesforce.competition__c c \n" +
+            "                        INNER JOIN heroku.round r on r.competition=c.sfid \n" +
+            "                        INNER JOIN heroku.fixture f on f.round = r.id \n" +
+            "                        WHERE c.sfid = ?\n" +
+            "                        AND r.is_deleted = TRUE \n" +
+            "                      );";
     Logger LOG = Logger.getLogger(FixtureDao.class);
 
     public static final String GET_PLAYED_FIXTURE_SQL = "SELECT f.*, ht.id as homeTeamId, at.id as awayTeamId, r.name as roundName, r.id as roundId, r.start_date as roundStartDate, r.end_date as roundEndDate\n" +
@@ -34,19 +43,10 @@ public class FixtureDao extends SuperDao implements Serializable {
             "                    AND f.status NOT IN ('Draft', 'Published')\n" +
             "                    ORDER BY f.round, f.id ASC;";
 
+
     public void clearLocationTimeSlotFromFixture(String compId) throws SQLException {
-        String updateTableSQL = " UPDATE heroku.fixture \n" +
-                "                    SET location_timeslot = null \n" +
-                "                    WHERE \n" +
-                "                      id IN (SELECT f.id FROM salesforce.competition__c c \n" +
-                "                        INNER JOIN heroku.round r on r.competition=c.sfid \n" +
-                "                        INNER JOIN heroku.fixture f on f.round = r.id \n" +
-                "                        WHERE c.sfid = ?\n" +
-                "                        AND r.is_deleted = TRUE \n" +
-                "                      );";
-
+        String updateTableSQL = CLEAR_TIMESLOT_UPDATE_SQL;
         jdbcExecuteUpdateWithOneParameter(compId, updateTableSQL);
-
     }
 
     public List<FixtureTeamRoundDto> getPlayedFixtures(String compId) throws SQLException {
@@ -60,10 +60,7 @@ public class FixtureDao extends SuperDao implements Serializable {
             List<FixtureTeamRoundDto> fixtureTeamRoundDtos = new ArrayList<FixtureTeamRoundDto>();
             while (result.next() )
             {
-                FixtureTeamRoundDto fixtureTeamRoundDto = new FixtureTeamRoundDto();
-                Fixture fixture = initFixture(result);
-                fixtureTeamRoundDtoRowMapper(result, fixtureTeamRoundDto, fixture);
-                fixtureTeamRoundDtos.add(fixtureTeamRoundDto);
+                processFixtureTeamRoundDto(result, fixtureTeamRoundDtos);
             }
 
             return fixtureTeamRoundDtos;
@@ -78,6 +75,13 @@ public class FixtureDao extends SuperDao implements Serializable {
 
     }
 
+    private void processFixtureTeamRoundDto(ResultSet result, List<FixtureTeamRoundDto> fixtureTeamRoundDtos) throws SQLException {
+        FixtureTeamRoundDto fixtureTeamRoundDto = new FixtureTeamRoundDto();
+        Fixture fixture = initFixture(result);
+        fixtureTeamRoundDtoRowMapper(result, fixtureTeamRoundDto, fixture);
+        fixtureTeamRoundDtos.add(fixtureTeamRoundDto);
+    }
+
     public List<FixtureTeamRoundDto> getAllFixturesByCompId(String compId) throws SQLException {
         List<FixtureTeamRoundDto> fixtureTeamRoundDtoList = new ArrayList<>();
 
@@ -89,10 +93,7 @@ public class FixtureDao extends SuperDao implements Serializable {
             preparedStatement.setString(1, compId);
             ResultSet result = preparedStatement.executeQuery();
             while (result.next()){
-                FixtureTeamRoundDto fixtureTeamRoundDto = new FixtureTeamRoundDto();
-                Fixture fixture = initFixture(result);
-                fixtureTeamRoundDtoRowMapper(result, fixtureTeamRoundDto, fixture);
-                fixtureTeamRoundDtoList.add(fixtureTeamRoundDto);
+                processFixtureTeamRoundDto(result, fixtureTeamRoundDtoList);
             }
 
             return fixtureTeamRoundDtoList;

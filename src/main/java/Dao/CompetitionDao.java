@@ -25,18 +25,7 @@ public class CompetitionDao extends SuperDao implements Serializable {
             ResultSet result = preparedStatement.executeQuery();
             Competition competition = new Competition();
             while (result.next() ){
-                competition.setSfId(compId);
-                competition.setName(result.getString("Name"));
-                competition.setStartDate(result.getTimestamp("startdate__c"));
-                competition.setEndDate(result.getTimestamp("enddate__c"));
-                competition.setSeason(result.getString("season__c"));
-                competition.setOrganisationOwner(result.getString("organisationowner__c"));
-                competition.setParentCompetition(result.getString("parentcompetition__c"));
-                competition.setPercentageOfLocationRequired(result.getDouble("percentageoflocationrequired__c"));
-                competition.setCompetitionTemplate(result.getString("competitiontemplate__c"));
-                competition.setDaysOfWeek(result.getString("daysofweek__c"));
-                competition.setGameTimeSlotLength(result.getDouble("gametimeslotlength__c"));
-                competition.setAllowFixtureOutsideScheduledTime(result.getBoolean("allowfixtureoutsidescheduledtime__c"));
+                competitionItemRowMapper(compId, result, competition);
 
             }
 
@@ -48,5 +37,20 @@ public class CompetitionDao extends SuperDao implements Serializable {
         } finally {
             dbConnection.close();
         }
+    }
+
+    private void competitionItemRowMapper(String compId, ResultSet result, Competition competition) throws SQLException {
+        competition.setSfId(compId);
+        competition.setName(result.getString("Name"));
+        competition.setStartDate(result.getTimestamp("startdate__c"));
+        competition.setEndDate(result.getTimestamp("enddate__c"));
+        competition.setSeason(result.getString("season__c"));
+        competition.setOrganisationOwner(result.getString("organisationowner__c"));
+        competition.setParentCompetition(result.getString("parentcompetition__c"));
+        competition.setPercentageOfLocationRequired(result.getDouble("percentageoflocationrequired__c"));
+        competition.setCompetitionTemplate(result.getString("competitiontemplate__c"));
+        competition.setDaysOfWeek(result.getString("daysofweek__c"));
+        competition.setGameTimeSlotLength(result.getDouble("gametimeslotlength__c"));
+        competition.setAllowFixtureOutsideScheduledTime(result.getBoolean("allowfixtureoutsidescheduledtime__c"));
     }
 }
