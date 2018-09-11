@@ -111,10 +111,87 @@ public class LocationDao extends SuperDao implements Serializable {
         return locationAvailabilityRuleList;
     }
 
-    public List<LocationTimeSlotDto> getLocationTimeSlotList(){
+    public List<LocationTimeSlotDto> getLocationTimeSlotList(List<String> locationSfIds) throws SQLException {
         List<LocationTimeSlotDto> locationTimeSlotDtos = new ArrayList<>();
+        Connection dbConnection = getConnection();
+        String selectSql = " SELECT\n" +
+                "                        CONCAT(th.name, ' vs ', ta.name) AS eventTitle,\n" +
+                "                        th.name AS homeTeamName,\n" +
+                "                        th.sfid AS homeTeamId,\n" +
+                "                        ta.name AS awayTeamName,\n" +
+                "                        ta.sfid AS awayTeamId,\n" +
+                "                        f.id AS fixtureId,\n" +
+                "                        f.status AS fixtureStatus,\n" +
+                "                        c.name AS competitionName,\n" +
+                "                        c.sfid AS competitionId,\n" +
+                "                        l.sfid AS resourceId,\n" +
+                "                        l.name AS resourceTitle,\n" +
+                "                        l.locationtimezone__c AS resourceTimezone,\n" +
+                "                        lt.id AS locationTimeslotId,\n" +
+                "                        lt.start_datetime AS startDateTime,\n" +
+                "                        (lt.start_datetime + INTERVAL '1 MINUTE' * lt.duration) AS endDateTime,\n" +
+                "                        lt.availability_rule AS availabilityRule,\n" +
+                "                        lt.duration AS duration\n" +
+                "                    FROM salesforce.location__c AS l\n" +
+                "                    INNER JOIN heroku.locationtimeslot AS lt ON l.sfid = lt.location\n" +
+                "                    INNER JOIN heroku.fixture AS f ON lt.id = f.location_timeslot\n" +
+                "                    INNER JOIN heroku.round AS r ON f.round = r.id AND r.is_deleted = FALSE and r.is_archived = FALSE\n" +
+                "                    INNER JOIN salesforce.competition__c AS c ON f.competition = c.sfid\n" +
+                "                    INNER JOIN heroku.fixtureteam AS fth ON f.id = fth.fixture\n" +
+                "                    INNER JOIN heroku.fixtureteam AS fta ON f.id = fta.fixture\n" +
+                "                    INNER JOIN salesforce.team__c AS th ON (fth.team = th.sfid AND fth.home_away = 'Home')\n" +
+                "                    INNER JOIN salesforce.team__c AS ta ON (fta.team = ta.sfid AND fta.home_away = 'Away')\n" +
+                "                    WHERE 1=1" +
+                "                    AND l.sfid = ANY(?)  ;";
+
+
+        try {
+            dbConnection.setAutoCommit(false);
+            PreparedStatement preparedStatement = dbConnection.prepareStatement(selectSql);
+            Array array =  dbConnection.createArrayOf("VARCHAR", locationSfIds.toArray());
+
+            preparedStatement.setArray(1, array);
+            ResultSet result = preparedStatement.executeQuery();
+            while (result.next() ){
+                LocationTimeSlotDto locationTimeSlotDto = locationTimeSlotDtoItemRowMapper(result);
+
+                locationTimeSlotDtos.add(locationTimeSlotDto);
+
+            }
+        } catch (SQLException e){
+            dbConnection.rollback();
+            LOG.error(e);
+            return null;
+        } finally {
+            dbConnection.close();
+        }
 
         return locationTimeSlotDtos;
+    }
+
+    private LocationTimeSlotDto locationTimeSlotDtoItemRowMapper(ResultSet result) throws SQLException {
+        LocationTimeSlotDto locationTimeSlotDto = new LocationTimeSlotDto();
+        locationTimeSlotDto.setEventTitle(result.getString("eventTitle"));
+        locationTimeSlotDto.setHomeTeamName(result.getString("homeTeamName"));
+        locationTimeSlotDto.setHomeTeamId(result.getString("homeTeamId"));
+        locationTimeSlotDto.setAwayTeamName(result.getString("awayTeamName"));
+        locationTimeSlotDto.setAwayTeamId(result.getString("awayTeamId"));
+
+        locationTimeSlotDto.setFixtureId(result.getString("fixtureId"));
+        locationTimeSlotDto.setFixtureStatus(result.getString("fixtureStatus"));
+        locationTimeSlotDto.setCompetitionName(result.getString("competitionName"));
+        locationTimeSlotDto.setCompetitionId(result.getString("competitionId"));
+
+        locationTimeSlotDto.setResourceId(result.getString("resourceId"));
+        locationTimeSlotDto.setResourceTitle(result.getString("resourceTitle"));
+        locationTimeSlotDto.setResourceTimeZone(result.getString("resourceTimezone"));
+        locationTimeSlotDto.setLocationTimeslotId(result.getString("locationTimeslotId"));
+        locationTimeSlotDto.setStartDateTime(result.getDate("startDateTime"));
+        locationTimeSlotDto.setEndDateTime(result.getDate("endDateTime"));
+
+        locationTimeSlotDto.setAvailabilityRule(result.getString("availabilityRule"));
+        locationTimeSlotDto.setDuration(result.getDouble("duration"));
+        return locationTimeSlotDto;
     }
 
     private LocationAvailabilityRule locationeAvailabilityItemRowMapper(ResultSet result) throws SQLException {

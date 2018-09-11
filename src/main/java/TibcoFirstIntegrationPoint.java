@@ -1,3 +1,4 @@
+import Dao.LocationDao;
 import Dao.RoundsDao;
 import Dto.TibcoFixtureGenerationDto;
 import Entity.*;
@@ -14,38 +15,9 @@ public class TibcoFirstIntegrationPoint implements Serializable {
     public static void main(String[] args) throws SQLException {
         final Logger LOG = Logger.getLogger(TibcoFirstIntegrationPoint.class);
 
-        RoundsDao roundsDao= new RoundsDao();
-        List<Integer> fixtureIds = new ArrayList<>();
-        fixtureIds.add(53384);
-        fixtureIds.add(53595);
+        //generateRoundFixturesTest();
 
-        fixtureIds.add(53600);
-        fixtureIds.add(53610);
-        fixtureIds.add(53616);
-
-        roundsDao.getRoundFixturesByFixtureIdList(fixtureIds);
-
-
-
-       /* System.out.println("hello world");
-        ThirdClassWithParam tc = new ThirdClassWithParam();
-              System.out.print(tc.returnParamTest("value from main"));
-        LOG.info("Imported log4j from maven");*/
-
-
-       //testComparatorSort();
-
-
-
-               /*
-
-                 Map<String, AvailableOpponent> sortedMap = new LinkedHashMap<>();
-               availableOpponentListForSort.stream().collect(
-                Collectors.toMap(AvailableOpponent::getTeamSfId, item->item)
-        );*/
-        //System.out.println("map print");
-        //availableOpponentListForSort.forEach(a-> sortedMap.put(a.getTeamSfId(), a));
-        //sortedMap.values().stream().forEach(a-> System.out.println(a.getTeamSfId()));
+        //locationTimeSlotTest();
 
 
         TibcoFixtureGenerationDto tbdto = setupTibcoFixtureGenerationDto();
@@ -61,6 +33,29 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         // JDBCConnection sc = new JDBCConnection();
       //  sc.TestPrintBlogs();
         //TestPrintBlogs();
+    }
+
+    private static void generateRoundFixturesTest() throws SQLException {
+        RoundsDao roundsDao= new RoundsDao();
+        List<Integer> fixtureIds = new ArrayList<>();
+        fixtureIds.add(53384);
+        fixtureIds.add(53595);
+
+        fixtureIds.add(53600);
+        fixtureIds.add(53610);
+        fixtureIds.add(53616);
+
+        roundsDao.getRoundFixturesByFixtureIdList(fixtureIds);
+    }
+
+    private static void locationTimeSlotTest() throws SQLException {
+        List<String> fixtureSfIds = new ArrayList<>();
+        fixtureSfIds.add("a0N2800000evxSJEAY");
+        fixtureSfIds.add("a0N2800000evxSGEAY");
+        fixtureSfIds.add("a0N2800000evxTaEAI");
+
+        LocationDao locationDao = new LocationDao();
+        locationDao.getLocationTimeSlotList(fixtureSfIds);
     }
 
     private static TibcoFixtureGenerationDto setupTibcoFixtureGenerationDto() {
