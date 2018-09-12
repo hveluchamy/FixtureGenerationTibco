@@ -9,6 +9,7 @@ import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.util.*;
@@ -18,7 +19,9 @@ public class TibcoFirstIntegrationPoint implements Serializable {
     public static void main(String[] args) throws SQLException {
         final Logger LOG = Logger.getLogger(TibcoFirstIntegrationPoint.class);
 
-        LocalDate date = LocalDate.of(2018, 9, 10); // 2014-06-15
+
+
+        LocalDate date = LocalDate.of(2018, 12, 10); // 2014-06-15
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         int dayOfWeekIntValue = dayOfWeek.getValue(); // 6
         String dayOfWeekName = dayOfWeek.name(); // SATURDAY
@@ -26,17 +29,23 @@ public class TibcoFirstIntegrationPoint implements Serializable {
         System.out.println(dayOfWeekIntValue);
         System.out.println(dayOfWeekName);
 
-        //generateRoundFixturesTest();
+        generateRoundFixturesTest();
 
         //locationTimeSlotTest();
 
         Date currentdate = new Date();
+
+        SimpleDateFormat simpleDateformat = new SimpleDateFormat("EEEE"); // the day of the week spelled out completely
+        System.out.println(simpleDateformat.format(currentdate));
+
         Date nextDate;
         nextDate = DateUtils.addDays(currentdate, 4);
 
         System.out.println("current date: " + currentdate);
 
         System.out.println("next date: " + nextDate);
+
+
 
         TibcoFixtureGenerationDto tbdto = setupTibcoFixtureGenerationDto();
 

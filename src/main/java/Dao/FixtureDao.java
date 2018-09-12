@@ -110,10 +110,10 @@ public class FixtureDao extends SuperDao implements Serializable {
 
 
     private Fixture initFixture(ResultSet result) throws SQLException {
-        return new Fixture(result.getLong("id"), result.getLong("round"), result.getString("competition"), result.getLong("locationTimeslot"),
-                            result.getString("homeTeamName"), result.getString("homeTeamId"), result.getString("awayTeamName"), result.getString("awayTeamId"),
-                            result.getString("status"),result.getString("resultType"),
-                            result.getString("externalId"));
+        return new Fixture(result.getLong("id"), result.getLong("round"), result.getString("competition"), result.getLong("location_timeslot"),
+                            result.getString("home_team_name"), result.getString("homeTeamId"), result.getString("away_team_name"), result.getString("awayTeamId"),
+                            result.getString("status"),result.getString("result_type"),
+                            result.getString("external_id"));
     }
 
 
