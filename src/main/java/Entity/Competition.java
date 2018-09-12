@@ -4,6 +4,7 @@ import Enums.CompetitionStatus;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
+import java.util.Date;
 
 public class Competition implements Serializable {
     private Integer Id;
@@ -23,6 +24,30 @@ public class Competition implements Serializable {
     private double maxNumberOfTeams;
     private double gameTimeSlotLength;
     private String repeatSchedule;
+    private Integer daysBetweenRounds;
+    //Transient
+    private Date lastPlayedDate;
+
+
+
+    public Integer getDaysBetweenRounds() {
+        return daysBetweenRounds;
+    }
+
+    public void setDaysBetweenRounds(Integer daysBetweenRounds) {
+        this.daysBetweenRounds = daysBetweenRounds;
+    }
+
+
+    public Date getLastPlayedDate() {
+        return lastPlayedDate;
+    }
+
+    public void setLastPlayedDate(Date lastPlayedDate) {
+        this.lastPlayedDate = lastPlayedDate;
+    }
+
+
 
     public Competition(){
 
