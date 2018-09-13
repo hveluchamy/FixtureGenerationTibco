@@ -11,15 +11,21 @@ import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 
 import java.io.Serializable;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.util.Collections;
+import java.time.DayOfWeek;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class LocationAvailabilityRuleManager implements Serializable {
+    public static final String BYE = "BYE";
     Logger LOG = Logger.getLogger(LocationAvailabilityRuleManager.class);
 
     public List<LocationAvailabilityRule> reduceLocationAvailabilityRules(List<LocationAvailabilityRule> locationAvailabilityRuleList, Competition competition) throws Exception {
@@ -60,6 +66,9 @@ public class LocationAvailabilityRuleManager implements Serializable {
                                       Competition competition, List<LocationTimeSlotDto> locationTimeSlotDtoList, List<ExceptionDateDto> exceptionDateDtoList, List<FixtureTeamRoundDto> skippedFixtureList,
                                       Date lastPlayedDate ) throws Exception {
 
+        Map<Long, Fixture> fixtureMap = fixtureList.stream().collect(
+                Collectors.toMap(Fixture::getRound, item ->item));
+
         List<Date> skippedDateList = skippedFixtureList.stream().filter(fixture -> fixture.getRoundEnDate()!=null).map(item -> item.getRoundEnDate()).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
         Date lastSkippedRoundDate = skippedDateList.get(0)!= null?skippedDateList.get(0):null;
         if(lastSkippedRoundDate==null){
@@ -69,9 +78,7 @@ public class LocationAvailabilityRuleManager implements Serializable {
         Integer daysBetweenRounds = competition.getDaysBetweenRounds()!=null? competition.getDaysBetweenRounds() : 7;
 
         if(daysBetweenRounds ==0) throw new Exception("0 days between rounds");
-
         Date currentDate = new Date();
-
         Date roundStartDate = null;
         Date roundEndDate = null;
 
@@ -85,7 +92,6 @@ public class LocationAvailabilityRuleManager implements Serializable {
             }
 
         }
-
         // Workout the default round end date from the round start date
 
         roundEndDate = DateUtils.addDays(roundStartDate, daysBetweenRounds-1);
@@ -94,18 +100,9 @@ public class LocationAvailabilityRuleManager implements Serializable {
         duration = competition.getGameTimeSlotLength();
 
         if(duration==0.0) throw new Exception("Fixture duraiton equals 0");
-
-       /* //TODO : need to change this and deal with fixtureTeamRoundDtoList
-        List<Long> roundNumberList = fixtureList.stream().map(item-> item.getRound()).collect(Collectors.toList());
-        if(roundNumberList.size() ==0) throw new Exception("0 rounds");
-        roundNumberList.sort(Comparator.comparing(item -> item));
-       */
-       //list.sort(Comparator.comparing(AnObject::getAttr));
-
         if(fixtureTeamRoundDtoList.size() ==0) throw new Exception("0 rounds");
-
         //TODO verify if it sorts by round name
-       fixtureTeamRoundDtoList.sort(Comparator.comparing(FixtureTeamRoundDto::getRoundName));
+        fixtureTeamRoundDtoList.sort(Comparator.comparing(FixtureTeamRoundDto::getRoundName));
 
        int roundIndex = 0;
        //loop each round
@@ -124,62 +121,144 @@ public class LocationAvailabilityRuleManager implements Serializable {
                    exceptedFound = false;
                    dayIndex=0;
                }
-
-
             Date SimpleDateFormat = DateUtils.addDays(roundStartDate, dayIndex);
             SimpleDateFormat simpleDateformat = new SimpleDateFormat("EEEE"); // the day of the week spelled out completely
-            System.out.println(simpleDateformat.format(SimpleDateFormat));
-               //simpleDateformat.format(
-
-           }
-
-          /*
-          *  roundDayLoop: for (var dayIndex=0; dayIndex < daysBetweenRounds; dayIndex++) {
-
-
-
-            //get the day of the week of this round day
-            let thisDayOfWeek = thisDate.day();
-
-            if (competitionDays.indexOf(thisDayOfWeek) != -1) {
-
-                this.logger.info(thisDate.format('YYYY-MM-DD') + ' is a competition day of week');
-                this.logger.info('check if ' + thisDate.format('YYYY-MM-DD') + ' is a competition exception day');
-                let thisDateOnly = thisDate.format('YYYY-MM-DD');
-                //check exception date
-                let todayExceptionDates = competitionExceptionDates.filter(ed => {
-                    let startDate = Moment(ed.start_date).format('YYYY-MM-DD');
-                    let endDate = Moment(ed.end_date).format('YYYY-MM-DD');
-                    return (thisDateOnly >= startDate && thisDateOnly <= endDate);
-                });
-
-                if (todayExceptionDates.length) {
-                    this.logger.info(thisDate.format('YYYY-MM-DD') + ' is a competition exception day');
-                    this.logger.info('skipping ' + thisDate.format('YYYY-MM-DD') + ', exception date found');
-                    this.logger.info('reschedule the round to ' + daysBetweenRounds + ' days after');
-
+            if(competition.getDaysOfWeek().contains(simpleDateformat.format(SimpleDateFormat))){
+                //exceptionDateDtoList.get(0).getExceptionDays()
+                Date finalRoundStartDate = roundStartDate;
+                //if start date falls between exception dates
+                List<ExceptionDateDto> problemDates = exceptionDateDtoList.stream().filter(getExceptionDateOverlapFilterPredicate(finalRoundStartDate)).collect(Collectors.toList());
+                if(problemDates.size()>0){
                     exceptedFound = true;
-                    roundStartDate = Moment(roundStartDate).add(daysBetweenRounds, 'days');
-                    roundEndDate = Moment(roundEndDate).add(daysBetweenRounds, 'days');
-                    this.logger.info('round start date rescheduled: ' + roundStartDate.format('YYYY-MM-DD'));
-                    this.logger.info('round end date rescheduled: ' + roundEndDate.format('YYYY-MM-DD'));
-                    continue roundDayLoop;
-                }
-                else {
-                    this.logger.info(thisDate.format('YYYY-MM-DD') + ' is a competition day');
+                    roundStartDate = DateUtils.addDays(roundStartDate, daysBetweenRounds);
+                    roundEndDate = DateUtils.addDays(roundEndDate, daysBetweenRounds);
                 }
             }
-        }*/
+           }
+           f.setRoundStartDate(roundStartDate);
+           f.setRoundEnDate(roundEndDate);
 
+           //now we have a round start and end date we can look at finding locations for the rounds
+
+           //TODO need to check if we have to do this as I already have fixturerounddtor
+           /*  //fixtures.
+        let roundFixtures = fixtures.filter(f => f.round == round);
+        this.logger.info('round fixture count: ' + roundFixtures.length);*/
+
+           //find LARs within the round date range
+           Date finalRoundStartDate1 = roundStartDate;
+           Date finalRoundEndDate = roundEndDate;
+           List<LocationAvailabilityRule> roundLars = locationAvailabilityRuleList.stream().filter(availableDateLARPredicate(finalRoundStartDate1, finalRoundEndDate)).collect(Collectors.toList());
+
+
+           //loop each round fixture
+
+           List<FixtureTeamRoundDto> roundFixture = fixtureTeamRoundDtoList.stream().filter(item-> item.getRoundId().equals(f.getRoundId())).collect(Collectors.toList());
+
+           for (FixtureTeamRoundDto ftrd: roundFixture) {
+               Fixture fixture = ftrd.getFixture();
+
+               if(fixture.getHomeTeamId().equals(BYE) || fixture.getAwayTeamId().equals(BYE)) continue;
+               //loop each day of round
+               for (int dayIndex = 0; dayIndex < daysBetweenRounds; dayIndex++) {
+
+                   Date thisDate = DateUtils.addDays(roundStartDate, daysBetweenRounds);
+
+                   Date SimpleDateFormat = DateUtils.addDays(thisDate, dayIndex);
+                   SimpleDateFormat simpleDateformat = new SimpleDateFormat("EEEE");
+                   String thisDayOfWeek =  simpleDateformat.format(SimpleDateFormat);
+
+                   //check if this is a competition day
+                   if(competition.getDaysOfWeek().contains(thisDayOfWeek)){
+                       roundLars.stream().filter(getLocationAvailabilityRulePredicate(thisDate, fixture, competition)).collect(Collectors.toList());
+                   }
+               }
+           }
            roundIndex++;
-
        }
+    }
+
+    private Predicate<LocationAvailabilityRule> getLocationAvailabilityRulePredicate(Date thisDate, Fixture fixture, Competition competition) {
+        return locationAvailabilityRule -> {
+            Timestamp starttimeC = locationAvailabilityRule.getStarttimeC();
+            java.sql.Date enddateC = locationAvailabilityRule.getEnddateC();
+            if(locationAvailabilityRule.getRepeatperiodtypeC()==null && starttimeC.equals(enddateC) && starttimeC == thisDate ) {
+                return true;
+            }
+
+            if(availableEntityIsNotNullAndMatchesValidation(fixture, competition, locationAvailabilityRule)
+                    ){
+                String repeatPeriod = locationAvailabilityRule.getRepeatperiodtypeC().toLowerCase();
+                //TODO - verfy if the vales below or rigth as it was transposed in nodejs and i didnt
+                if(repeatPeriod == "days" || repeatPeriod == "weeks" || repeatPeriod == "months" || repeatPeriod == "years") {
+                    if(dateAvailabilityValidation(thisDate, locationAvailabilityRule, starttimeC, enddateC)) {
+                        if(locationAvailabilityRule.getRepeatonC().length() > 0){
+                           // DateUtils
+                            return true;
+                        }
+                    }
+
+                }
+
+            }
+
+            return false;
+        };
+    }
+
+
+    public static long getDifferenceDays(Date d1, Date d2) {
+        YearMonth m1 = YearMonth.from(d1.toInstant());
+        YearMonth m2 = YearMonth.from(d2.toInstant());
+
+        return m1.until(m2, ChronoUnit.DAYS) + 1;
+    }
+
+
+    public static long getDifferenceWeeks(Date d1, Date d2) {
+        YearMonth m1 = YearMonth.from(d1.toInstant());
+        YearMonth m2 = YearMonth.from(d2.toInstant());
+
+        return m1.until(m2, ChronoUnit.WEEKS) + 1;
+    }
+
+    public static long getDifferenceMonths(Date d1, Date d2) {
+        YearMonth m1 = YearMonth.from(d1.toInstant());
+        YearMonth m2 = YearMonth.from(d2.toInstant());
+
+        return m1.until(m2, ChronoUnit.MONTHS) + 1;
+    }
+
+    /* YearMonth m1 = YearMonth.from(date1.toInstant());
+    YearMonth m2 = YearMonth.from(date2.toInstant());
+
+    return m1.until(m2, ChronoUnit.MONTHS) + 1;*/
 
 
 
+    private boolean dateAvailabilityValidation(Date thisDate, LocationAvailabilityRule locationAvailabilityRule, Timestamp starttimeC, java.sql.Date enddateC) {
+        return thisDate.compareTo(starttimeC) >=0
+                && thisDate.compareTo(enddateC) <=0
+                &&  locationAvailabilityRule.getRepeateveryxperiodC() >0.0;
+    }
+
+    private boolean availableEntityIsNotNullAndMatchesValidation(Fixture fixture, Competition competition, LocationAvailabilityRule locationAvailabilityRule) {
+        String availableforCompetitionteam = locationAvailabilityRule.getAvailableforcompetitionteamC();
+        String availablForCompetition = locationAvailabilityRule.getAvailableforcompetitionC();
+        String availableForOrganisation = locationAvailabilityRule.getAvailablefororganisationC();
+        return (availableforCompetitionteam != null && availableforCompetitionteam.equals(fixture.getHomeTeamId()))
+                || (availablForCompetition!=null && availablForCompetition.equals(competition.getSfId()))
+                || (availableForOrganisation!=null && availableForOrganisation.equals(competition.getOrganisationOwner()));
+    }
 
 
+    private Predicate<LocationAvailabilityRule> availableDateLARPredicate(Date finalRoundStartDate1, Date finalRoundEndDate) {
+        return item-> finalRoundStartDate1.compareTo(item.getStarttimeC())>=0 && finalRoundEndDate.compareTo(item.getEnddateC()) <=0;
+    }
 
+    private Predicate<ExceptionDateDto> getExceptionDateOverlapFilterPredicate(Date finalRoundStartDate) {
+        return item->  finalRoundStartDate.compareTo(item.getStartDate()) >=0
+                && finalRoundStartDate.compareTo(item.getEndDate()) <=0;
     }
 
 }
