@@ -215,7 +215,7 @@ public class LocationDao extends SuperDao implements Serializable {
         locationAvailabilityRule.setAvailableforcompetitionC(result.getString("availableforcompetition"));
         locationAvailabilityRule.setEndafterxoccuranceC(result.getDouble("endafterxoccurance"));
         locationAvailabilityRule.setLocationTimeZone(result.getString("resourcetimezone"));
-        locationAvailabilityRule.setTeamhomegamelocationpreferencerankingC(result.getDouble("availabilityranking"));
+        locationAvailabilityRule.setAvailabilityRanking(result.getInt("availabilityranking"));
         return locationAvailabilityRule;
     }
 

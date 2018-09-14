@@ -1,5 +1,6 @@
 package Manager;
 
+import CustomComparator.AvailabilityRankingComparator;
 import Dto.ExceptionDateDto;
 import Dto.FixtureTeamRoundDto;
 import Dto.LocationTimeSlotDto;
@@ -13,14 +14,9 @@ import org.apache.log4j.Logger;
 import java.io.Serializable;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.time.DayOfWeek;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -96,6 +92,7 @@ public class LocationAvailabilityRuleManager implements Serializable {
 
         roundEndDate = DateUtils.addDays(roundStartDate, daysBetweenRounds-1);
 
+        //TODO verify if its minute
         Double duration = 0.0;
         duration = competition.getGameTimeSlotLength();
 
@@ -165,17 +162,36 @@ public class LocationAvailabilityRuleManager implements Serializable {
                    Date thisDate = DateUtils.addDays(roundStartDate, daysBetweenRounds);
 
                    Date SimpleDateFormat = DateUtils.addDays(thisDate, dayIndex);
-                   SimpleDateFormat simpleDateformat = new SimpleDateFormat("EEEE");
-                   String thisDayOfWeek =  simpleDateformat.format(SimpleDateFormat);
+                   String thisDayOfWeek = getDayOfTheWeek(SimpleDateFormat);
 
                    //check if this is a competition day
                    if(competition.getDaysOfWeek().contains(thisDayOfWeek)){
-                       roundLars.stream().filter(getLocationAvailabilityRulePredicate(thisDate, fixture, competition)).collect(Collectors.toList());
+                      List<LocationAvailabilityRule> dayLars = roundLars.stream().filter(getLocationAvailabilityRulePredicate(thisDate, fixture, competition)).collect(Collectors.toList());
+                      // Collections.sort(availableOpponentListForSort, new OpponentComparator());
+                      Collections.sort(dayLars, new AvailabilityRankingComparator());
+
+                       //if a matching lar/s is found then check their availability
+                       for (LocationAvailabilityRule lar:dayLars) {
+                           Date larStartDate = lar.getStarttimeC();
+                           //TODO verfiy this
+                           Date todayStartDate =  thisDate;
+                           todayStartDate.setTime(larStartDate.getTime());
+                           Date todayEndDate = DateUtils.addMinutes(todayStartDate, duration.intValue());
+
+                       }
+
+
+
                    }
                }
            }
            roundIndex++;
        }
+    }
+
+    private String getDayOfTheWeek(Date simpleDateFormat) {
+        SimpleDateFormat simpleDateformat = new SimpleDateFormat("EEEE");
+        return simpleDateformat.format(simpleDateFormat);
     }
 
     private Predicate<LocationAvailabilityRule> getLocationAvailabilityRulePredicate(Date thisDate, Fixture fixture, Competition competition) {
@@ -190,12 +206,48 @@ public class LocationAvailabilityRuleManager implements Serializable {
                     ){
                 String repeatPeriod = locationAvailabilityRule.getRepeatperiodtypeC().toLowerCase();
                 //TODO - verfy if the vales below or rigth as it was transposed in nodejs and i didnt
-                if(repeatPeriod == "days" || repeatPeriod == "weeks" || repeatPeriod == "months" || repeatPeriod == "years") {
+                //TODO - followup of above todo..I changed it to values from db. need to check it while debugging
+                if(repeatPeriod == "daily" || repeatPeriod == "weekly" || repeatPeriod == "monthly" || repeatPeriod == "yearly") {
                     if(dateAvailabilityValidation(thisDate, locationAvailabilityRule, starttimeC, enddateC)) {
-                        if(locationAvailabilityRule.getRepeatonC().length() > 0){
-                           // DateUtils
-                            return true;
+                        String repeatonC = locationAvailabilityRule.getRepeatonC();
+                        Date today = new Date();
+                        Long differenceTime;
+                        if(repeatonC.length()== 0){
+
+                            differenceTime =  getDifferenceDays(starttimeC, today);
+                            if (validateIfItsIntegerAndReturnTrue(locationAvailabilityRule, differenceTime)) return true;
                         }
+                        if(repeatPeriod =="weekly" && repeatonC.length()>0){
+                            String thisDayOfTheWeek = getDayOfTheWeek(thisDate);
+                            if (competition.getDaysOfWeek().contains(thisDayOfTheWeek)){
+
+                                //TODO verify if this is working during debugging. Translated the commented bit to the one below. IMPORTANT!!! please check
+                                /*
+                                 // Find the first forward occurence of this day of the week from the start date,
+                                    // then divide by repeat value. If result is integer then the current fixture date is
+                                    // is sequence to the rule.
+                                    Number.isInteger(thisDate.diff(Moment(larStartDate).hour(0).minute(0).second(0).day(thisDate.day() <= thisDayOfWeek ?  thisDayOfWeek : thisDayOfWeek + 7), 'weeks') / l.repeatEvery)
+                                * */
+                                int larStartTimeDayofweek = DayOfWeek.valueOf(getDayOfTheWeek(starttimeC)).value;
+                                int thisDateDayofweek = DayOfWeek.valueOf(thisDayOfTheWeek).value;
+                                int daysOffset = 0;
+                                if(thisDateDayofweek > larStartTimeDayofweek){
+                                    larStartTimeDayofweek = larStartTimeDayofweek+7;
+                                    daysOffset = larStartTimeDayofweek;
+                                } else {
+                                    daysOffset = thisDateDayofweek;
+                                }
+
+                                differenceTime = getDifferenceWeeks(DateUtils.addDays(starttimeC, daysOffset), today);
+                                if (validateIfItsIntegerAndReturnTrue(locationAvailabilityRule, differenceTime)) return true;
+
+
+
+
+                            }
+                        }
+
+
                     }
 
                 }
@@ -204,6 +256,36 @@ public class LocationAvailabilityRuleManager implements Serializable {
 
             return false;
         };
+    }
+
+    //TODO: Verify this during debugging
+    private boolean validateIfItsIntegerAndReturnTrue(LocationAvailabilityRule locationAvailabilityRule, Long differenceTime) {
+        if (differenceTime/locationAvailabilityRule.getRepeateveryxperiodC()% 1 ==0 ){
+            return true;
+        }
+        return false;
+    }
+
+    public enum DayOfWeek {
+        Sunday(1),Monday(2),Tuesday(3),Wednesday(4),Thursday(5),Friday(6),Saturday(7);
+
+        private final int value;
+
+        DayOfWeek(int value) {
+
+            this.value = value;
+        }
+
+        public int getValue() {
+
+            return value;
+        }
+
+        @Override
+        public String toString() {
+
+            return value + "";
+        }
     }
 
 

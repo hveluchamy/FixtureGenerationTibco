@@ -1,4 +1,4 @@
-package Manager;
+package CustomComparator;
 
 import Entity.AvailableOpponent;
 
