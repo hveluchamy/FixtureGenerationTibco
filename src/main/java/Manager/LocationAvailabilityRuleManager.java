@@ -1,6 +1,7 @@
 package Manager;
 
 import CustomComparator.AvailabilityRankingComparator;
+import CustomComparator.TimeSlotComparator;
 import Dto.ExceptionDateDto;
 import Dto.FixtureTeamRoundDto;
 import Dto.LocationTimeSlotDto;
@@ -105,7 +106,7 @@ public class LocationAvailabilityRuleManager implements Serializable {
        //loop each round
        for (FixtureTeamRoundDto f: fixtureTeamRoundDtoList
              ) {
-          LocationTimeSlotDto locationTimeSlotDto = locationTimeSlotDtoList.remove(0);
+          //LocationTimeSlotDto locationTimeSlotDto = locationTimeSlotDtoList.remove(0);
           if(roundIndex >0){
               roundStartDate = DateUtils.addDays(roundEndDate, 1);
               roundEndDate =DateUtils.addDays(roundStartDate, daysBetweenRounds-1);
@@ -177,6 +178,36 @@ public class LocationAvailabilityRuleManager implements Serializable {
                            Date todayStartDate =  thisDate;
                            todayStartDate.setTime(larStartDate.getTime());
                            Date todayEndDate = DateUtils.addMinutes(todayStartDate, duration.intValue());
+                           Double timeSlotDuration =0.0;
+                           //check what timeslots if any are occupying this lar on this date
+                           List<LocationTimeSlotDto> occupiedTimeSlots =  locationTimeSlotDtoList.stream().filter(locationTimeSlotValidationPredicate(lar, todayStartDate)).collect(Collectors.toList());
+                           timeSlotDuration = occupiedTimeSlots.stream().map(item-> item.getDuration()).mapToDouble(Double::doubleValue).sum();
+
+                           //if lar time available minus total timeslot time is greater than time needed then book it
+                           if(lar.getDurationC() - timeSlotDuration >=duration){
+                               //try and work out a booking time
+                               //find the latest booking time in the timeslot array
+                               //TODO verify this occupiedTimeSlots sorted
+                               Collections.sort(occupiedTimeSlots, new TimeSlotComparator());
+
+                               java.sql.Date endDateTimeOfLastTimeSlot = occupiedTimeSlots.get(occupiedTimeSlots.size() - 1).getEndDateTime();
+                               if(occupiedTimeSlots.size()==0 || (occupiedTimeSlots.size()>0)
+                                       && (lar.getDurationC()-timeSlotDuration >=duration)
+                                       && (getDifferenceMinutes(todayEndDate, endDateTimeOfLastTimeSlot)>duration)){
+                                   //book the time
+                                   Date timeslotStart = occupiedTimeSlots.size()>0? endDateTimeOfLastTimeSlot :todayStartDate;
+                                   //TODO - please verify
+                                   Date timeslotEnd = DateUtils.addMinutes(timeslotStart, duration.intValue());
+
+                                   //locationTimeSlotDtoList.add()
+
+
+                                   /* let timeslotStart = sortedTimeslots.length ? Moment(sortedTimeslots[sortedTimeslots.length - 1].enddatetime) : todaysStartDate;
+                                let timeslotEnd = Moment(timeslotStart).add(duration, 'minutes');*/
+
+                               }
+
+                           }
 
                        }
 
@@ -187,6 +218,16 @@ public class LocationAvailabilityRuleManager implements Serializable {
            }
            roundIndex++;
        }
+    }
+
+    //TODO - verify this please
+    private Predicate<LocationTimeSlotDto> locationTimeSlotValidationPredicate(LocationAvailabilityRule lar, Date todayStartDate) {
+        return item-> {
+            if(item.getAvailabilityRule().equals(lar.getId())){
+                if(item.getStartDateTime().equals(todayStartDate)) return true;
+            }
+            return false;
+        };
     }
 
     private String getDayOfTheWeek(Date simpleDateFormat) {
@@ -309,6 +350,13 @@ public class LocationAvailabilityRuleManager implements Serializable {
         YearMonth m2 = YearMonth.from(d2.toInstant());
 
         return m1.until(m2, ChronoUnit.MONTHS) + 1;
+    }
+
+    public static long getDifferenceMinutes(Date d1, Date d2) {
+        YearMonth m1 = YearMonth.from(d1.toInstant());
+        YearMonth m2 = YearMonth.from(d2.toInstant());
+
+        return m1.until(m2, ChronoUnit.MINUTES) + 1;
     }
 
     /* YearMonth m1 = YearMonth.from(date1.toInstant());
