@@ -62,7 +62,7 @@ public class LocationDao extends SuperDao implements Serializable {
     }
 
 
-    public Date getPlayedDate(String compId) throws SQLException {
+    public Date getLastPlayedDate(String compId) throws SQLException {
         Date playedDate = null;
         String selectSql = GET_PLAYED_DATE_SQL;
 

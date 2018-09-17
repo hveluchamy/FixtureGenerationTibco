@@ -19,7 +19,7 @@ public class ExceptionDateDao extends SuperDao implements Serializable {
 
     Logger LOG = Logger.getLogger(ExceptionDateDao.class);
 
-    public List<ExceptionDateDto> getExceptionDates(Integer exceptionDateId, Date startDate, Date endDate, String seasonId, String competitionId) throws SQLException {
+    public List<ExceptionDateDto> getExceptionDates(String seasonId, String competitionId) throws SQLException {
         List<ExceptionDateDto> exceptionDateDtoList = new ArrayList<>();
         Connection dbConnection = getConnection();
         String selectSql = EXCEPTION_DATES_SQL;

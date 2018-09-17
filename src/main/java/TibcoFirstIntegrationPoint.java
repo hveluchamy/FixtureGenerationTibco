@@ -1,9 +1,9 @@
+import CustomComparator.OpponentComparator;
 import Dao.LocationDao;
 import Dao.RoundsDao;
 import Dto.TibcoFixtureGenerationDto;
 import Entity.*;
 import Manager.FixtureManager;
-import OpponentComparator;
 import org.apache.commons.lang.time.DateUtils;
 import org.apache.log4j.Logger;
 

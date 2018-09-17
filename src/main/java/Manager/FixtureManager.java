@@ -123,11 +123,16 @@ public class FixtureManager implements Serializable {
     }
 
     //get played fixtures
-    private List<FixtureTeamRoundDto> getPlayedFixturesAndRounds(String competitionId) throws SQLException {
+    public List<FixtureTeamRoundDto> getPlayedFixturesAndRounds(String competitionId) throws SQLException {
         List<FixtureTeamRoundDto> fixtureTeamRoundDtoList = new ArrayList<>();
         FixtureDao fixtureDao = new FixtureDao();
         fixtureTeamRoundDtoList =  fixtureDao.getPlayedFixtures(competitionId);
         return fixtureTeamRoundDtoList;
+    }
+
+    public List<FixtureTeamRoundDto> getAllFixtures(String compId) throws SQLException {
+        FixtureDao fixtureDao = new FixtureDao();
+        return fixtureDao.getAllFixturesByCompId(compId);
     }
 
 

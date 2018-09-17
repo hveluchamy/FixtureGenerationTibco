@@ -42,6 +42,7 @@ public class LocationAvailabilityRuleManager implements Serializable {
 
 
                 //TODO : need to see why its transposed like this in nodejs
+                //Guess we can ignore this after debugging
                 /*..
                 *  let sfMomentMap = {
                   daily: 'days',

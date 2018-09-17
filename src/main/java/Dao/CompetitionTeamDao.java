@@ -9,6 +9,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CompetitionTeamDao extends SuperDao implements Serializable {
     public static final String GET_COMPETITION_TEAM_SQL = "SELECT *\n" +
@@ -18,8 +20,8 @@ public class CompetitionTeamDao extends SuperDao implements Serializable {
             "                    AND status =?   ;";
     Logger LOG = Logger.getLogger(CompetitionTeamDao.class);
 
-    public CompetitionTeam getCompetitionTeam(String compId, boolean isArchived, String status) throws SQLException {
-        CompetitionTeam competitionTeam = new CompetitionTeam();
+    public List<CompetitionTeam> getCompetitionTeams(String compId, boolean isArchived, String status) throws SQLException {
+        List<CompetitionTeam> competitionTeams = new ArrayList<>();
         String selectSql = GET_COMPETITION_TEAM_SQL;
         Connection dbConnection = getConnection();
 
@@ -31,7 +33,9 @@ public class CompetitionTeamDao extends SuperDao implements Serializable {
             preparedStatement.setString(3, status);
             ResultSet result = preparedStatement.executeQuery();
             while (result.next() ){
+                CompetitionTeam competitionTeam = new CompetitionTeam();
                 competitionTeamItemWrapper(compId, competitionTeam, result);
+                competitionTeams.add(competitionTeam);
 
             }
         } catch (SQLException e){
@@ -42,7 +46,7 @@ public class CompetitionTeamDao extends SuperDao implements Serializable {
             dbConnection.close();
         }
 
-        return competitionTeam;
+        return competitionTeams;
     }
 
     private void competitionTeamItemWrapper(String compId, CompetitionTeam competitionTeam, ResultSet result) throws SQLException {
