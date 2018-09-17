@@ -53,5 +53,6 @@ public class CompetitionDao extends SuperDao implements Serializable {
         competition.setGameTimeSlotLength(result.getDouble("gametimeslotlength__c"));
         competition.setAllowFixtureOutsideScheduledTime(result.getBoolean("allowfixtureoutsidescheduledtime__c"));
         competition.setDaysBetweenRounds((int) result.getDouble("daysbetweenrounds__c"));
+       // competition.setLastPlayedDate(result.getDate());
     }
 }

@@ -59,14 +59,18 @@ public class LocationAvailabilityRuleManager implements Serializable {
         return locationAvailabilityRuleList;
     }
 
+    /* public void findLocationTimeSlots(List<Fixture> fixtureList, List<Round> roundList, List<FixtureTeamRoundDto> fixtureTeamRoundDtoList, List<LocationAvailabilityRule> locationAvailabilityRuleList,
+                                      Competition competition, List<LocationTimeSlotDto> locationTimeSlotDtoList, List<ExceptionDateDto> exceptionDateDtoList, List<FixtureTeamRoundDto> skippedFixtureList,
+                                      Date lastPlayedDate ) throws Exception {
+*/
 
-    public void findLocationTimeSlots(List<Fixture> fixtureList, List<Round> roundList, List<FixtureTeamRoundDto> fixtureTeamRoundDtoList, List<LocationAvailabilityRule> locationAvailabilityRuleList,
+    public void findLocationTimeSlots(List<FixtureTeamRoundDto> fixtureTeamRoundDtoList, List<LocationAvailabilityRule> locationAvailabilityRuleList,
                                       Competition competition, List<LocationTimeSlotDto> locationTimeSlotDtoList, List<ExceptionDateDto> exceptionDateDtoList, List<FixtureTeamRoundDto> skippedFixtureList,
                                       Date lastPlayedDate ) throws Exception {
 
-        Map<Long, Fixture> fixtureMap = fixtureList.stream().collect(
+      /*  Map<Long, Fixture> fixtureMap = fixtureList.stream().collect(
                 Collectors.toMap(Fixture::getRound, item ->item));
-
+*/
         List<Date> skippedDateList = skippedFixtureList.stream().filter(fixture -> fixture.getRoundEnDate()!=null).map(item -> item.getRoundEnDate()).sorted(Comparator.reverseOrder()).collect(Collectors.toList());
         Date lastSkippedRoundDate = skippedDateList.get(0)!= null?skippedDateList.get(0):null;
         if(lastSkippedRoundDate==null){

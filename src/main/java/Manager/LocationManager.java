@@ -4,10 +4,7 @@ import Dao.ExceptionDateDao;
 import Dao.FixtureDao;
 import Dao.LocationDao;
 import Dao.SeasonDao;
-import Dto.DateRangeDto;
-import Dto.ExceptionDateDto;
-import Dto.FixtureTeamRoundDto;
-import Dto.RoundDto;
+import Dto.*;
 import Entity.Competition;
 import Entity.CompetitionTeam;
 import Entity.LocationAvailabilityRule;
@@ -17,6 +14,7 @@ import org.apache.log4j.Logger;
 
 import java.io.Serializable;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -43,6 +41,8 @@ public class LocationManager implements Serializable {
         RoundsManager roundsManager = new RoundsManager();
         FixtureManager fixtureManager = new FixtureManager();
         ExceptionDateDao exceptionDateDao = new ExceptionDateDao();
+        LocationDao locationDao = new LocationDao();
+        LocationAvailabilityRuleManager locationAvailabilityRuleManager = new LocationAvailabilityRuleManager();
 
         //get detail about the competition this relates to
         Competition competition = competitionManager.getCompetitionById(compId);
@@ -62,15 +62,7 @@ public class LocationManager implements Serializable {
         SeasonDao seasonDao = new SeasonDao();
         Season season = seasonDao.getSeasonById(competition.getSeason());
 
-        DateRangeDto dateRangeDto = new DateRangeDto();
-        dateRangeDto.setStartDate(competition.getStartDate());
-        if(competition.getEndDate()!=null){
-            dateRangeDto.setEndDate((java.sql.Date) DateUtils.addMonths(competition.getEndDate(), 6));
-        } else {
-            dateRangeDto.setEndDate((java.sql.Date) DateUtils.addMonths(season.getEnddateC(), 6));
-        }
-        dateRangeDto.setSeasonStartDate(season.getStartdateC());
-        dateRangeDto.setSeasonEndDate(season.getEnddateC());
+        DateRangeDto dateRangeDto = setDateRangeValues(competition, season);
 
         inputDataValidation(compId, competition, competitionTeams, roundsFixtures, rounds, allFixtures, season);
 
@@ -87,7 +79,29 @@ public class LocationManager implements Serializable {
         String organisationOwnerValue = competition.getAllowFixtureOutsideScheduledTime()==true? competition.getOrganisationOwner():null;
         //TODO verify this below
         List<String>competitionTeamIds = competitionTeams.stream().map(item->item.getTeam()).collect(Collectors.toList());
-        List<LocationAvailabilityRule> locationAvailabilityRules = getLocationAvailabilityRules(organisationOwnerValue, compId,competitionTeamIds);
+        List<LocationAvailabilityRule> locationAvailabilityRulesOriginal = getLocationAvailabilityRules(organisationOwnerValue, compId,competitionTeamIds);
+        List<LocationAvailabilityRule> locationAvailabilityRules = processLocationAvailDateRanges(dateRangeDto, locationAvailabilityRulesOriginal);
+
+        List<String> locationSfIds = locationAvailabilityRules.stream().map(item->item.getLocationC()).collect(Collectors.toList());
+
+
+        List<LocationTimeSlotDto> locationTimeSlotDtos = locationDao.getLocationTimeSlotList(locationSfIds);
+
+        locationAvailabilityRuleManager.reduceLocationAvailabilityRules(locationAvailabilityRules, competition);
+
+        if(locationAvailabilityRules.size()==0) throw new Exception("No suitable Location Availability Rules could be found.");
+        //TODO need to check what is this in nodejs
+        // let skippedFixtures = isFinal ? local.allFixtures: local.playedFixtures
+
+        //We're now ready to attempt to allocate fixtures to locations
+        locationAvailabilityRuleManager.findLocationTimeSlots(roundsFixtures, locationAvailabilityRules, competition, locationTimeSlotDtos, competitionExceptionDates, playedRoundFixtures, lastPlayedDate);
+
+        if(locationTimeSlotDtos.size()==0) throw new Exception("No suitable Location Timeslots could be assigned.");
+
+        //TODO need to call stored procedure heroku.proc_updateGeneratedRoundsTimeslots and then to validation check for extendedFixtures;
+
+
+        //done!!!
 
 
 
@@ -100,6 +114,43 @@ public class LocationManager implements Serializable {
 
 
 
+
+
+
+
+
+
+
+    }
+
+    private List<LocationAvailabilityRule> processLocationAvailDateRanges(DateRangeDto dateRangeDto, List<LocationAvailabilityRule> locationAvailabilityRulesOriginal) {
+        List<LocationAvailabilityRule> locationAvailabilityRules = new ArrayList<>();
+        for (LocationAvailabilityRule lar: locationAvailabilityRulesOriginal
+             ) {
+            Timestamp startDate = lar.getStarttimeC();
+            Date endDate = lar.getEnddateC();
+            Timestamp startDateRange = dateRangeDto.getStartDate();
+            Date endDateRange = dateRangeDto.getEndDate();
+
+            if(startDateRange.compareTo(startDate) >=0 || startDateRange.compareTo(endDate) <= 0 || endDate ==null){
+                lar.setEnddateC((java.sql.Date) DateUtils.addMonths(lar.getEnddateC(), 6));
+                locationAvailabilityRules.add(lar);
+            }
+        }
+        return locationAvailabilityRules;
+    }
+
+    private DateRangeDto setDateRangeValues(Competition competition, Season season) {
+        DateRangeDto dateRangeDto = new DateRangeDto();
+        dateRangeDto.setStartDate(competition.getStartDate());
+        if(competition.getEndDate()!=null){
+            dateRangeDto.setEndDate((java.sql.Date) DateUtils.addMonths(competition.getEndDate(), 6));
+        } else {
+            dateRangeDto.setEndDate((java.sql.Date) DateUtils.addMonths(season.getEnddateC(), 6));
+        }
+        dateRangeDto.setSeasonStartDate(season.getStartdateC());
+        dateRangeDto.setSeasonEndDate(season.getEnddateC());
+        return dateRangeDto;
     }
 
     private List<LocationAvailabilityRule> getLocationAvailabilityRules(String organisationId, String compId, List<String> compTeamIds ) throws SQLException {
