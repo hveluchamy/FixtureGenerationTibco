@@ -20,7 +20,10 @@ public class LocationTimeSlotDto implements Serializable {
     private Date startDateTime;
     private Date endDateTime;
     private String availabilityRule;
+    private String organisationOwner;
+    private double percentUsed;
     private double duration;
+
 
     public String getEventTitle() {
         return eventTitle;
@@ -148,6 +151,22 @@ public class LocationTimeSlotDto implements Serializable {
 
     public void setAvailabilityRule(String availabilityRule) {
         this.availabilityRule = availabilityRule;
+    }
+
+    public String getOrganisationOwner() {
+        return organisationOwner;
+    }
+
+    public void setOrganisationOwner(String organisationOwner) {
+        this.organisationOwner = organisationOwner;
+    }
+
+    public double getPercentUsed() {
+        return percentUsed;
+    }
+
+    public void setPercentUsed(double percentUsed) {
+        this.percentUsed = percentUsed;
     }
 
     public double getDuration() {

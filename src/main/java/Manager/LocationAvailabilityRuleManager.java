@@ -198,12 +198,20 @@ public class LocationAvailabilityRuleManager implements Serializable {
                                    Date timeslotStart = occupiedTimeSlots.size()>0? endDateTimeOfLastTimeSlot :todayStartDate;
                                    //TODO - please verify
                                    Date timeslotEnd = DateUtils.addMinutes(timeslotStart, duration.intValue());
+                                   //TODO -verify why currentTimeSlots is required in nodejs
 
-                                   //locationTimeSlotDtoList.add()
+                                   LocationTimeSlotDto locationTimeSlotDto = new LocationTimeSlotDto();
+                                   //TODO verify if its sfid in db
+                                   locationTimeSlotDto.setAvailabilityRule(lar.getSfid());
+                                   locationTimeSlotDto.setStartDateTime((java.sql.Date) timeslotStart);
+                                   locationTimeSlotDto.setDuration(duration);
+                                   locationTimeSlotDto.setEndDateTime((java.sql.Date) timeslotEnd);
+                                   locationTimeSlotDto.setFixtureId(fixture.getExternalId());
+                                   locationTimeSlotDto.setPercentUsed(competition.getPercentageOfLocationRequired());
+                                   locationTimeSlotDto.setOrganisationOwner(competition.getOrganisationOwner());
 
 
-                                   /* let timeslotStart = sortedTimeslots.length ? Moment(sortedTimeslots[sortedTimeslots.length - 1].enddatetime) : todaysStartDate;
-                                let timeslotEnd = Moment(timeslotStart).add(duration, 'minutes');*/
+                                    locationTimeSlotDtoList.add(locationTimeSlotDto);
 
                                }
 
