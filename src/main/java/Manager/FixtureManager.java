@@ -431,8 +431,6 @@ public class FixtureManager implements Serializable {
     }
 
     private Map<String, AvailableOpponent> getAvailableOpponents(List<Team> teams, Map<String, FixtureStatistics> fixtureStatisticsMap, Integer roundNumber){
-        /*Map<String, FixtureStatistics> fixtureStatisticsMap =  fixtureStatistics.stream().collect(
-                Collectors.toMap(FixtureStatistics::getTeamSfId, item ->item));*/
         Integer minRoundsBetweenEncounters = teams.size()/2;
         Map<String, AvailableOpponent> availableOpponentMap = new HashMap<>();
         Integer teamIndex = 0;
