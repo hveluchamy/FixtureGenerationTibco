@@ -227,57 +227,6 @@ public class FixtureManager implements Serializable {
         Long currentStreak;
         //home game stats
 
-      /* if(teamSfid.equals(homeTeamSfid)){
-
-           //frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
-           fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
-           //frsOpponent.setLastHome(1L);
-           frsOpponent.setLastAway(1L);
-           fr.setLastHome(increamentPropertyValueByOne(fr.getLastHome()));
-           fr.setLastAway(0L);
-           currentStreak = fr.getLastHome();
-           if(fr.getLastHome()>1){
-               //remove streak
-               fr.setHomeDistribution(currentStreak-1);
-           }
-           fr.setHomeDistribution(increamentPropertyValueByOne(currentStreak));
-       } else {
-           frsOpponent.setLastAway(0L);
-           frsOpponent.setLastHome(1L);
-           fr.setLastHome(0L);
-           fr.setLastAway(increamentPropertyValueByOne(fr.getLastAway()));
-           currentStreak = fr.getLastAway();
-           if(fr.getLastAway()>1){
-               fr.setAwayDistribution(currentStreak-1);
-           }
-           fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
-       }*/
-
-       /*//The one below is translated from nodejs. aboce is the modification
-        if(teamSfid.equals(homeTeamSfid)){
-            //TODO - verify why to increament opponents home game
-            frsOpponent.setHomeGames(increamentPropertyValueByOne(frsOpponent.getHomeGames()));
-            fr.setHomeGames(increamentPropertyValueByOne(fr.getHomeGames()));
-            //TODO - verify whey set this to 1 for home game in opponent
-            frsOpponent.setLastHome(1L);
-            fr.setLastHome(increamentPropertyValueByOne(fr.getLastHome()));
-            currentStreak = fr.getLastHome();
-            if(fr.getLastHome()>1){
-                //remove streak
-                fr.setHomeDistribution(currentStreak-1);
-            }
-            fr.setHomeDistribution(increamentPropertyValueByOne(currentStreak));
-        } else {
-            frsOpponent.setLastHome(0L);
-            fr.setLastHome(0L);
-            fr.setLastAway(increamentPropertyValueByOne(fr.getLastAway()));
-            currentStreak = fr.getLastAway();
-            if(fr.getLastAway()>1){
-                fr.setAwayDistribution(currentStreak-1);
-            }
-            fr.setAwayDistribution(increamentPropertyValueByOne(currentStreak));
-        }*/
-
        //The one below is translated from nodejs. aboce is the modification
        if(teamSfid.equals(homeTeamSfid)){
            //TODO - verify why to increament opponents home game
