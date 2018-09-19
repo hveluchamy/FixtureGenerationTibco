@@ -429,6 +429,7 @@ public class FixtureManager implements Serializable {
         return matchList;
     }
 
+
     private Map<String, AvailableOpponent> getAvailableOpponents(List<Team> teams, Map<String, FixtureStatistics> fixtureStatisticsMap, Integer roundNumber){
         Integer minRoundsBetweenEncounters = teams.size()/2;
         Map<String, AvailableOpponent> availableOpponentMap = new HashMap<>();
