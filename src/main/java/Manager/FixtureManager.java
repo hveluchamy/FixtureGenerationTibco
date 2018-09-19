@@ -420,7 +420,6 @@ public class FixtureManager implements Serializable {
 
 
             matchList.add(match);
-            //List<FixtureStatistics> fixtureStatisticsList = (List<FixtureStatistics>) fixtureStatisticsMap.values();
             fixtureStatistics= calculateStatistics(fixtureStatistics, round, awayTeam.getTeamSfId(), homeTeam.getTeamSfId() );
             fixtureStatisticsMap.clear();
             fixtureStatisticsMap =  fixtureStatistics.stream().collect(
